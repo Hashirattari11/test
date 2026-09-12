@@ -1,0 +1,14 @@
+{
+  "name": "autofix-cli",
+  "version": "1.0.0",
+  "description": "AutoFix API CLI — monitor third-party API changes from your terminal",
+  "bin": {
+    "autofix": "./bin/autofix.js"
+  },
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "keywords": ["api", "monitoring", "breaking-changes", "cli"],
+  "author": "AutoFix",
+  "license": "MIT"
+}

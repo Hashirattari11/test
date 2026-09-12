@@ -1,0 +1,30 @@
+name: Weekly Digest Email
+
+# Every Monday at 09:00 UTC + manual trigger.
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send weekly digest emails
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
+        run: |
+          set -euo pipefail
+          echo "→ POST /internal/digest/send-weekly"
+          curl --fail-with-body -sS -X POST \
+            "${BACKEND_URL}/internal/digest/send-weekly" \
+            -H "X-Internal-Secret: ${INTERNAL_SECRET}"
+          echo
+
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   BACKEND_URL       e.g. https://autofix-api.onrender.com   (no trailing slash)
+#   INTERNAL_SECRET   must match the backend's INTERNAL_SECRET env var
+#
+# Note: Render's free web service sleeps after inactivity; the first curl may
+# take ~30–60s to wake it. curl --fail-with-body surfaces non-2xx as failures.

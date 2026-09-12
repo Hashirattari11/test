@@ -1,0 +1,1 @@
+"""Repository scanner: download (trees+blobs), project detection (M2)."""

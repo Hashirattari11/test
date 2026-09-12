@@ -1,0 +1,1 @@
+"""Health Intelligence module — API reliability and health scoring."""

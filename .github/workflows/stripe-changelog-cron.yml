@@ -1,0 +1,56 @@
+name: Changelog Monitor (Phase B — all 12 providers)
+
+# Daily at 06:00 UTC + manual trigger (GitHub Actions, free tier).
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger-scans:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch all Phase B provider changelogs
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
+        run: |
+          set -euo pipefail
+          echo "→ POST /internal/changelog/fetch (all providers)"
+          curl --fail-with-body -sS -X POST \
+            "${BACKEND_URL}/internal/changelog/fetch" \
+            -H "X-Internal-Secret: ${INTERNAL_SECRET}"
+          echo
+
+      - name: Process changelog events → alerts (+ flush approved emails)
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
+        run: |
+          set -euo pipefail
+          echo "→ POST /internal/changelog/process"
+          curl --fail-with-body -sS -X POST \
+            "${BACKEND_URL}/internal/changelog/process" \
+            -H "X-Internal-Secret: ${INTERNAL_SECRET}"
+          echo
+
+      - name: Daily repository scan (24h monitoring) + impact analysis
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
+        run: |
+          set -euo pipefail
+          echo "→ POST /internal/daily-scan (per-repo 24h due check)"
+          curl --fail-with-body -sS -X POST \
+            "${BACKEND_URL}/internal/daily-scan" \
+            -H "X-Internal-Secret: ${INTERNAL_SECRET}"
+          echo
+
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   BACKEND_URL       the deployed backend base URL, no trailing slash
+#   INTERNAL_SECRET   must match the backend's INTERNAL_SECRET env var
+#
+# NOTE: the old vercel.json crons were REMOVED — Vercel Cron only sends
+# GET without headers, but these endpoints require POST + X-Internal-Secret
+# (they returned 405/401 every day). GitHub Actions is now the single
+# scheduler: fetch → process → daily-scan, every day at 06:00 UTC.

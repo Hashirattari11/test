@@ -1,0 +1,1 @@
+"""Fix engine (M4): deterministic rule-based fixes + validation + PR creation."""

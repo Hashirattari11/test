@@ -1,0 +1,1 @@
+"""Breaking-change rules engine (M3): real provider rules -> normalized findings."""

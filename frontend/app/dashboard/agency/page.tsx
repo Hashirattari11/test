@@ -238,7 +238,7 @@ function AgencyPageContent() {
           <div className="agency-invite-box" style={{ animation: "fadeInUp 0.3s ease" }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 16px" }}>Invite a Client</h3>
             <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 0 16px" }}>Enter the client&apos;s name and email. They&apos;ll receive an authorization link — no account needed.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div className="agency-invite-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
               <div>
                 <label className="agency-label">Client Name</label>
                 <input className="agency-input" value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="e.g. Acme Corp" />

@@ -124,7 +124,7 @@ export default function ReposPage() {
                 flexWrap: "wrap",
               }}
             >
-              <div style={{ minWidth: 240 }}>
+              <div style={{ minWidth: 0, flex: "1 1 0" }}>
                 <Link
                   href={`/dashboard/repos/${r.id}`}
                   style={{ fontWeight: 600, textDecoration: "none", color: "inherit" }}
@@ -136,7 +136,7 @@ export default function ReposPage() {
                   {r.last_scanned_at ? new Date(r.last_scanned_at).toLocaleString() : "never"}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 <button
                   className="btn btn-secondary"
                   onClick={() => onScan(r.id)}
@@ -178,7 +178,7 @@ export default function ReposPage() {
               background: "var(--surface,#fff)",
               border: "1px solid var(--border,#e5e7eb)",
               borderRadius: 16,
-              padding: 28,
+              padding: "clamp(16px, 4vw, 28px)",
               width: "100%",
               maxWidth: 560,
               maxHeight: "80vh",

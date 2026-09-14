@@ -2559,3 +2559,41 @@ h2 {
 :root[data-theme="dark"] .dashboard-header {
   background: rgba(14, 16, 22, 0.85);
 }
+
+/* ============================================================================
+   RESPONSIVE SAFETY NET (whole-site)
+   Catches inline-style overflow that class-based breakpoints can't reach.
+   ============================================================================ */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+pre,
+code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+html,
+body {
+  overflow-x: hidden;
+}
+/* Hide empty data-label placeholders in responsive-cards tables */
+.table.responsive-cards td[data-label=""]::before {
+  display: none;
+}
+/* Inline 2-col grids that carry no breakpoint class: collapse on phones */
+@media (max-width: 640px) {
+  .dashboard-content [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+  .page-header,
+  .mc-panel h3 {
+    flex-wrap: wrap;
+  }
+  .table.responsive-cards tr {
+    padding: 4px 10px;
+  }
+}

@@ -284,9 +284,18 @@ def connect_repo(body: RepoConnectIn, user_id: str = Depends(get_current_user_id
 
     repo = res.data[0]
 
-    # Auto-scan on connect (Phase 3) - fire and forget, don't fail connect if scan fails
+    # Auto-scan on connect (Phase 3) — run in the BACKGROUND task runner so
+    # the connect request returns immediately. The old inline scan_repo()
+    # could exceed the Vercel function timeout (60s) on large repos, which
+    # made the frontend appear stuck on "Connecting..." even though the repo
+    # row was already created.
     try:
-        scan_repo(repo["id"], user_id)
+        start_scan(
+            repo["id"],
+            repo["full_name"],
+            repo.get("default_branch") or "main",
+            token,
+        )
     except Exception:
         # Log but don't fail - scan can be retried manually
         pass

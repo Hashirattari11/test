@@ -1,41 +1,35 @@
-# Project Context
+# Project Context (COMPACTED 2026-09-14 ~05:42 — ALL USER TASKS COMPLETE)
 
 ## Environment
-- Frontend: Next.js 14.2.15 (TS, App Router) `D:\autofix\frontend` — dev URL: frontend-eight-phi-60.vercel.app
-- Backend: FastAPI (Python 3.12) `D:\autofix\backend` — prod: backend-virid-ten-43.vercel.app
-- DB: Supabase (MCP tools; service_role key bypasses RLS - DO NOT enable RLS blindly)
-- Platform: win32 PowerShell 5.1 (no &&, foreground bash only; run_background=cmd.exe fails $env:)
+- Frontend: Next.js 14.2.15 (TS) `D:\autofix\frontend` — prod alias frontend-eight-phi-60.vercel.app; repo Hashirattari11/autofix-frontend (frontend@ROOT) synced @42ea7e2
+- Backend: FastAPI py3.12 `D:\autofix\backend` — prod alias backend-virid-ten-43.vercel.app; repo Hashirattari11/autofix-backend (backend@ROOT) synced @f455e4b (was b55bfb9)
+- DB Supabase MCP; win32 PS5.1: no `&&`, `gh api --jq` FAILS (use `| ConvertFrom-Json`), run_background=cmd.exe (no `$env:` — use bash tool for deploys), robocopy exit 0-7 OK, anomaly notices FALSE POSITIVES ignore
+- Git: D:\autofix origin=Hashirattari11/test (WORKFLOW+SECRETS HOME only). Real homes: autofix-frontend + autofix-backend.
 
 ## Gates
-- Frontend: `npx tsc --noEmit` + `npm run build` (workdir frontend) — PASS (82 pages)
-- Backend: `$env:PYTHONPATH="D:\autofix\backend"; python -m pytest -q` foreground — 144 passed
-- Deploy (env-var, SEQUENTIAL never parallel): `VERCEL_ORG_ID=team_VajkoNE2yGmuAR89Mm13PZx3` + `VERCEL_PROJECT_ID` (backend prj_Zw3MX8LSD6C4I6C4WoknhsHMxzjI / frontend prj_A73XsdB63JtYbfaFrsjrUK9Yhxja) `vercel deploy --prod --yes` from folder. Root .vercel renamed .vercel.bak2 — KEEP RENAMED. Stray autofix project prj_6i3aRh5pWFnWASmzgjfq0T5MzeLM polluted (avoid).
+- Frontend: `npx tsc --noEmit` + `npm run build` — PASS 82 pages
+- Backend: `$env:PYTHONPATH="D:\autofix\backend"; python -m pytest -q` — 144 passed
+- Deploy SEQUENTIAL via bash tool: `$env:VERCEL_ORG_ID="team_VajkoNE2yGmuAR89Mm13PZx3"` + `$env:VERCEL_PROJECT_ID` (backend prj_Zw3MX8LSD6C4I6C4WoknhsHMxzjI / frontend prj_A73XsdB63JtYbfaFrsjrUK9Yhxja) then `vercel deploy --prod --yes` from folder. Root .vercel renamed .vercel.bak2 — KEEP. Never run_background a deploy ($env: fails in cmd.exe).
 
-## Current Status (M19 repo-picker fix in progress — deployed & live-verified)
-- **M19 GitHub repo picker fix** (frontend-only, NOT yet deployed as of this write): ROOT CAUSE of "picker missing after GitHub connect" = navigation gap, NOT a code bug. Picker page /dashboard/repos fully intact (button always rendered, picker modal fetches /repos/github, connected ✓, connect upsert on_conflict user_id+github_repo_id, no 3-repo limit). BUT sidebar had NO "Repositories" item AND dashboard CTAs ("Connect a GitHub repository" empty-state + "+ Connect Provider or Repository") pointed to /dashboard/settings/integrations = SLACK-ONLY page (no GitHub picker). FIXED: layout.tsx added "Repositories" nav item (flatItems, after Overview) + ReposIconSVG; DashboardClient.tsx both CTAs -> /dashboard/repos; repos/page.tsx picker modal -> 401="GitHub authorization needs to be renewed."+Reconnect GitHub(/auth/github), other err="Unable to load your GitHub repositories."+Retry, empty->honest empty state (was blank). Backend /repos/github verified healthy live (demo no-token -> 400 fail-closed; owner DB github_access_token present -> real list; types align str). OWNER ACTION needed later: browser click-through to connect the 4th repo (agent has no GitHub session).
-- **M18 real-account-only + 10-day unlimited trial** (deployed): /auth/demo now requires X-Internal-Secret (public 401, internal 200, GET method); LoginClient demo button removed; /login 2kB; billing.py TRIAL_DAYS=10 + in_unlimited_trial() -> effective monitored_api_limit=-1 (unlimited) during window; owner hashirattari73@gmail.com (3d206f17-7abc-4857-be29-00c8406ce16f) monitored_api_limit=-1 permanent; /billing/status live -> {"plan":"trial","monitored_api_limit":-1}.
-- **M17 FINAL PRODUCTION AUDIT** (complete): GH Actions daily-stripe pipeline (.github/workflows/stripe-changelog-cron.yml: fetch->process->daily-scan 06:00 UTC; needs exactly 2 secrets BACKEND_URL + INTERNAL_SECRET — BOTH CONFIGURED by user, repo pushed; do NOT modify this workflow or secrets), changelog_events title/severity/deadline fixed, run_daily_scan detections->api_detections fixed, process_new_events bounded 120, impact analysis 60.4s->2.8s, cron_run_log=10, daily_scan_runs=3, changelog_events=353, alerts=8, impact_analyses=85, REAL emails to owner (Resend sandbox: non-owner sends 403 until domain verified). Fire drill + auto-fix PR pipeline REAL and live-guarded.
-- Auth model: ensureSession() is a NO-OP now (no demo); dashboard layout no-token -> /login; real flow /auth/github -> callback -> storeSession -> legal-acceptance|dashboard. /auth/demo GET + X-Internal-Secret only (internal tests).
-- Live: backend backend-virid-ten-43.vercel.app (healthz 200); frontend frontend-eight-phi-60.vercel.app (/login / / /pricing /docs 200). Deployment via VERCEL_PROJECT_ID env-var, SEQUENTIAL, from each folder (root .vercel renamed .vercel.bak2 — KEEP; stray prj_6i3aRh5pWFnWASmzgjfq0T5MzeLM polluted — avoid).
+## ALL TASKS COMPLETE (user approved "karo complete")
+1. **Connect-repo hang FIXED** — repos.py connect_repo → async `start_scan(id, full_name, default_branch, token)` (not sync scan_repo). Deployed dpl_HRXWzPLNqWNutfwSS97PzFmXgK8P; live /repos→401, /docs→200.
+2. **Responsive pass** — repos/page.tsx (minWidth→flex 1 1 0; buttons flexWrap; modal clamp padding), repos/[id]/page.tsx (footprint table +responsive-cards +data-labels; expanded td data-label=""), agency/page.tsx (invite grid auto-fit minmax(200px,1fr)), globals.css safety net appended END (img/svg/video max-width 100%; pre/code overflow-x; html,body overflow-x hidden; td[data-label=""]::before display none; ≤640px inline grid collapse 1fr !important + page-header/mc-panel h3 wrap). Deployed dpl_HJCsk1TrYRzGKVaJuyxhwam51MQ9 → frontend-grk0qtu2t; live repos/login/root/agency 200. Pushed 42ea7e2.
+3. **Backend repo sync** — remote b55bfb9 was a DIFFERENT lineage (user pushed granular Sep 8 history; local = single "production ready" commit lineage w/ newer routers impact/consent/notifications + deployed state). Did NOT blindly overwrite: verified route inventories (local has /incidents, /provider-connections CRUD; remote had /providers, /usage/{id}, repo-free collect, /provider/{provider} — evolved/replaced), only forecast.py genuinely obsolete (no imports). Synced local→remote as commit f455e4b (preserved .env.example; dropped forecast.py). `b55bfb9..f455e4b main -> main` PUSHED. NOTE: remote-only files kept where useful; git history preserves everything.
+4. **Daily digest enabled** — `UPDATE users SET notify_daily_status=true WHERE id='3d206f17-...'` → owner hashirattari73@gmail.com now notify_email_alerts=true, notify_daily_status=true. Emails now send daily (not just when issues found).
+5. Temp clones cleaned.
 
-## Key Files
-- frontend/app/dashboard/layout.tsx (sidebar flatItems incl NEW "Repositories"; ReposIconSVG; auth gate ~L102; account menu; sign-out -> /login)
-- frontend/app/dashboard/repos/page.tsx (+ Connect Repository picker modal: 401/Retry/empty states; connect upsert; auto-scan on connect)
-- frontend/app/dashboard/DashboardClient.tsx (both repo CTAs -> /dashboard/repos; Connections/Monitored APIs stats)
-- frontend/app/dashboard/health/scanner/page.tsx (dropdown scan; NOTE: connect picker lives on /dashboard/repos, NOT here)
-- frontend/lib/api.ts (request()/ApiError{status}, listRepos/listGithubRepos/connectRepo, githubCallback)
-- frontend/lib/auth.ts (getToken/getUser/storeSession/clearSession; ensureSession no-op)
-- backend/app/routers/repos.py (L106 /repos/github picker endpoint — token->list_user_repos, 401->expired msg, 502 infra; L130 list_connected; L259 /repos/connect upsert on_conflict=user_id,github_repo_id; L313 scan)
-- backend/app/github_client.py (L136 list_user_repos — GET /user/repos per_page 100 paginated, github_repo_id=str(id))
-- backend/app/billing.py (TRIAL_DAYS=10, in_unlimited_trial, get_user_plan_info)
-- backend/app/routers/auth.py (/demo GET guarded by require_internal_secret; /github/callback)
-- .github/workflows/stripe-changelog-cron.yml — DO NOT MODIFY (daily-scan infra, 2 secrets set)
-- .opencode/todo.md M17/M18 complete, M19 in progress
+## Infrastructure facts (stable, do not re-verify unless asked)
+- GH Action workflow `stripe-changelog-cron.yml` lives ONLY in test repo (e2bfb2e, curls have -L); cron 06:00 UTC: fetch→process→daily-scan. Secrets: BACKEND_URL=https://backend-virid-ten-43.vercel.app; INTERNAL_SECRET value = see GH Actions secrets on test repo (do NOT write the literal value into public files).
+- Backend auth: X-Internal-Secret header = settings.cron_secret = CRON_SECRET or INTERNAL_SECRET (deps.py L70-77). Verified E2E live 09-14 (run 34837416096 SUCCESS; 2× daily_status emails SENT 200).
+- Owner id 3d206f17-7abc-4857-be29-00c8406ce16f (hashirattari73@gmail.com). Demo 85c03e20-6557-4df7-8c4a-7d72d7a55f37. Resend sandbox: non-owner 403 until domain verified.
 
-## Pending / Owner-level
-- M19 frontend deploy (in progress — after gates PASS) then live /dashboard/repos 200 check.
-- Browser click-through to connect 4th repo (owner action — agent has no GitHub session; everything code/Db/API-side verified).
-- Real browser OAuth round-trip test (interactive GitHub sign-in) — API chain fully verified, UI live.
-- RESEND_FROM_EMAIL verified sender in Resend (email feature needs it for real sends; currently sandbox -> non-owner 403).
-- Stripe live keys if billing activated; /authorize/[token] legacy route exists.
-- Admin login requires is_admin=true user (demo is 403 — correct).
+## Key Files (current production state)
+- backend/app/routers/repos.py (async connect), backend/app/engine/scanner/runner.py
+- backend/vercel.json (maxDuration 60), app/main.py, app/health/* (no forecast.py)
+- frontend/app/globals.css (safety net END), premium.css, dashboard/repos/*, agency/page.tsx
+- frontend/lib/api.ts, lib/auth.ts
+
+## PENDING (only user-actionable)
+- Owner browser test: connect repo live (should return instantly now) + mobile viewport check of dashboard pages.
+- RESEND_FROM_EMAIL verified sender for real emails (sandbox blocks non-owner).
+- Stripe live keys if billing activated.

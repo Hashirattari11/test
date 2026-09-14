@@ -253,7 +253,7 @@ export default function RepoDetailPage() {
               No API usage detected yet. Click <strong>Scan now</strong> to analyze this repo.
             </div>
           ) : (
-            <table className="table">
+            <table className="table responsive-cards">
               <thead>
                 <tr>
                   <th>API</th>
@@ -530,7 +530,7 @@ function FootprintRows({
   return (
     <>
       <tr>
-        <td>
+        <td data-label="API">
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <ApiBadge name={group.api_name} /> <strong>{apiLabel(group.api_name)}</strong>
           </span>
@@ -540,14 +540,14 @@ function FootprintRows({
             </span>
           )}
         </td>
-        <td>
+        <td data-label="Status">
           <span className={`pill ${statusColor}`} style={{ fontSize: 11 }}>
             {statusLabel}
           </span>
         </td>
-        <td>{group.file_count}</td>
-        <td>{group.detection_count}</td>
-        <td style={{ textAlign: "right" }}>
+        <td data-label="Files">{group.file_count}</td>
+        <td data-label="Detections">{group.detection_count}</td>
+        <td data-label="" style={{ textAlign: "right" }}>
           <button className="btn btn-sm" onClick={onToggle}>
             {open ? "Hide" : "Show"} files
           </button>
@@ -556,7 +556,7 @@ function FootprintRows({
       {open &&
         group.detections.map((d) => (
           <tr key={d.id} style={{ background: "#fbfbfe" }}>
-            <td colSpan={5} style={{ paddingLeft: 24 }}>
+            <td data-label="" colSpan={5} style={{ paddingLeft: 24 }}>
               <code>
                 {d.file_path}
                 {d.line_number ? `:${d.line_number}` : ""}

@@ -11,6 +11,7 @@ export default function ReposPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [ghRepos, setGhRepos] = useState<GitHubRepo[] | null>(null);
   const [ghError, setGhError] = useState<string | null>(null);
+  const [ghErrorStatus, setGhErrorStatus] = useState<number | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
 
   const load = () => {
@@ -33,10 +34,12 @@ export default function ReposPage() {
   async function openPicker() {
     setShowPicker(true);
     setGhError(null);
+    setGhErrorStatus(null);
     setGhRepos(null);
     try {
       setGhRepos(await listGithubRepos());
     } catch (e: any) {
+      setGhErrorStatus(e?.status ?? null);
       setGhError(e.message || "Failed to load GitHub repositories.");
     }
   }
@@ -204,13 +207,32 @@ export default function ReposPage() {
               </button>
             </div>
             {ghError && (
-              <div style={{ color: "#b91c1c", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 10, padding: "12px 16px", marginBottom: 12 }}>
-                {ghError}
+              <div style={{ color: "#b91c1c", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 10, padding: "14px 16px", marginBottom: 12 }}>
+                {ghErrorStatus === 401 ? (
+                  <>
+                    <div style={{ fontWeight: 600, marginBottom: 10 }}>GitHub authorization needs to be renewed.</div>
+                    <Link href="/auth/github" className="btn btn-sm btn-primary" style={{ borderRadius: 8 }}>
+                      Reconnect GitHub
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 600, marginBottom: 10 }}>Unable to load your GitHub repositories.</div>
+                    <button className="btn btn-sm" onClick={openPicker} style={{ borderRadius: 8 }}>
+                      Retry
+                    </button>
+                  </>
+                )}
               </div>
             )}
             {ghRepos === null && !ghError ? (
               <div style={{ textAlign: "center", padding: 40, color: "var(--muted,#6b7280)" }}>
                 Loading your GitHub repositories...
+              </div>
+            ) : (ghRepos ?? []).length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: "var(--muted,#6b7280)" }}>
+                No GitHub repositories available to connect. Create a repository on
+                GitHub or request access to an existing one.
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

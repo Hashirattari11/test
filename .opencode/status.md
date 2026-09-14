@@ -1,14 +1,21 @@
 ﻿# Mission Status
 
 ## Progress
-- .opencode/todo.md: M1-M17 all [x] (100%)
+- .opencode/todo.md: M1-M19 all [x] (100%)
 - Issues: 0 unresolved (3 REMAINING owner-action items documented below)
 - Workers: 0 active
-- Verification Strategy: Live endpoint verification + DB evidence + Resend API truth
+- Verification Strategy: Live endpoint verification + DB evidence + Resend API truth + FE build gates + live bundle grep
 - Execution Status: pass
 
 ## Current Phase
-FINAL V2 PRODUCTION LAUNCH AUDIT — complete
+M19 complete — GitHub repo picker "missing" fix (root cause = navigation gap; fix DEPLOYED + LIVE)
+
+## M19 (complete — frontend fix, backend untouched)
+- ROOT CAUSE: Picker page /dashboard/repos intact + functional (no 3-repo limit, no connected-filter bug, types align; backend /repos/github live-verified fail-closed: demo no-token -> 400 'No GitHub connection on file', owner DB github_access_token present). The picker was INVISIBLE to users: sidebar had NO "Repositories" item, and dashboard CTAs ("Connect a GitHub repository" + "+ Connect Provider or Repository") both pointed to /dashboard/settings/integrations which is a Slack-ONLY page.
+- FIXED (3 files, frontend only): layout.tsx -> "Repositories" sidebar item (after Overview) + ReposIconSVG; DashboardClient.tsx -> both repo CTAs now /dashboard/repos; repos/page.tsx -> picker modal: 401/GH-expired -> "GitHub authorization needs to be renewed." + [Reconnect GitHub] (/auth/github); other errors -> "Unable to load your GitHub repositories." + [Retry]; empty list -> honest empty state (was blank modal).
+- Gates: tsc --noEmit PASS + next build PASS exit 0 (82 pages; /dashboard/repos 4.09kB -> 4.28kB)
+- Deploy: frontend prod dpl AcGSG2EhGEm143Pvfz85cZ7rk7D5 -> aliased frontend-eight-phi-60.vercel.app; live /dashboard/repos 200 + /login 200; live JS bundle grep confirms new strings (Reconnect GitHub / Unable to load / empty state). Backend untouched (daily-scan infra preserved).
+- Remaining (owner action): browser click-through to connect 4th repo (agent has no GitHub session; everything code/Db/API-side verified)
 
 ## Audit Summary (live-verified)
 

@@ -224,6 +224,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const flatItems: NavItem[] = [
     { name: "Overview", href: "/dashboard", icon: Icon(<OverviewIconSVG />) },
+    { name: "Repositories", href: "/dashboard/repos", icon: Icon(<ReposIconSVG />) },
     { name: "Alerts", href: "/dashboard/alerts", icon: Icon(<AlertsIconSVG />) },
     { name: "Provider Changes", href: "/dashboard/changelog", icon: Icon(<ChangelogIconSVG />) },
     { name: "Developer CLI", href: "/dashboard/cli", icon: Icon(<CliIconSVG />) },
@@ -489,6 +490,9 @@ function OverviewIconSVG() {
 }
 function AlertsIconSVG() {
   return svg20(<><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></>);
+}
+function ReposIconSVG() {
+  return svg20(<><path d="M3 6a3 3 0 0 1 3-3h12a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H7a2 2 0 0 0-2 2" /><path d="M3 6v14a2 2 0 0 0 2 2h13" /><path d="M8 7h8" /><path d="M8 11h5" /></>);
 }
 function ErrorsIconSVG() {
   return svg20(<><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>);

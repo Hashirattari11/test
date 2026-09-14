@@ -400,7 +400,7 @@ export default function DashboardClient() {
         <h3>Code Intelligence</h3>
         {!stats || (stats.repos === 0 && (repos ?? []).length === 0) ? (
           <p className="mc-empty">
-            No repositories monitored. <Link href="/dashboard/settings/integrations" style={{ color: "var(--accent)" }}>Connect a GitHub repository</Link> to enable code intelligence.
+            No repositories monitored. <Link href="/dashboard/repos" style={{ color: "var(--accent)" }}>Connect a GitHub repository</Link> to enable code intelligence.
           </p>
         ) : (
           <div className="mc-grid mc-cards" style={{ marginBottom: 12 }}>
@@ -485,7 +485,7 @@ export default function DashboardClient() {
       <div className="mc-panel">
         <h3>Quick Actions</h3>
         <div className="mc-actions">
-          <Link href="/dashboard/settings/integrations" className="btn btn-primary">+ Connect Provider or Repository</Link>
+          <Link href="/dashboard/repos" className="btn btn-primary">+ Connect Repository</Link>
           <Link href="/dashboard/health/scanner" className="btn btn-secondary">Run Repository Scan</Link>
           <Link href="/dashboard/health/incidents" className="btn btn-secondary">View Incidents</Link>
           <Link href="/dashboard/alerts" className="btn btn-secondary">View Alerts</Link>

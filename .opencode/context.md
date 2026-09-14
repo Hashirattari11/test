@@ -11,24 +11,31 @@
 - Backend: `$env:PYTHONPATH="D:\autofix\backend"; python -m pytest -q` foreground — 144 passed
 - Deploy (env-var, SEQUENTIAL never parallel): `VERCEL_ORG_ID=team_VajkoNE2yGmuAR89Mm13PZx3` + `VERCEL_PROJECT_ID` (backend prj_Zw3MX8LSD6C4I6C4WoknhsHMxzjI / frontend prj_A73XsdB63JtYbfaFrsjrUK9Yhxja) `vercel deploy --prod --yes` from folder. Root .vercel renamed .vercel.bak2 — KEEP RENAMED. Stray autofix project prj_6i3aRh5pWFnWASmzgjfq0T5MzeLM polluted (avoid).
 
-## Current Status (M16 + fixes deployed & live-verified)
-- **M16 real GitHub login** (deployed): /login (Continue with GitHub + demo), /auth/github (CSRF state -> GitHub authorize), /auth/callback (validate state -> POST /auth/github/callback -> storeSession -> legal-acceptance|dashboard). Landing "Log in" link; dashboard menu "Sign in with GitHub" for demo. GitHub OAuth App callback REGISTERED (authorize 302 no error). Frontend env: NEXT_PUBLIC_API_BASE_URL=backend-virid-ten-43, NEXT_PUBLIC_GITHUB_CLIENT_ID=Ov23liRAu5b41z6Bh7dM. Backend env: GITHUB_CLIENT_ID/SECRET, CRON_SECRET, RESEND_* all set.
-- **Auth model change (no auto-demo)**: ensureSession() no longer fetches /auth/demo; startDemoSession() (new, auth.ts) used ONLY by /login demo button. Dashboard layout: no token -> router.replace("/login"); bell effect guarded. handleSignOut -> /login. PricingClient checkout no-token -> /login.
-- **Dashboard "Providers 0" fixed**: stat renamed "Connections" (connected.length) + NEW "Monitored APIs" card + "API Usage" panel (real) using backend stats.monitored_api_count (len(MONITORED_APIS), added DashboardStatsOut field; empty-repos branch returns monitored_api_count=12 — verified live =12).
-- **Live verified**: all backend endpoints (healthz 200, auth demo/me/consent 200, github/callback 422, dashboard/stats 200 w/ monitored_api_count=12, repos 200, repos/github 400 Unauthorized=expected demo-no-token, internal/changelog/notices 200, health/issues 200, provider-connections 200, errors/failures/incidents/anomalies 200, billing/status 200, admin/* 403 demo-correct); all 17 frontend URLs 200; security headers present (CSP, HSTS, XCTO, XFO, RP, Permissions-Policy, X-XSS-Protection).
-- M13 (polish/motion CSS), M14 (security headers), M15 (consent migrations applied prod) — complete.
+## Current Status (M19 repo-picker fix in progress — deployed & live-verified)
+- **M19 GitHub repo picker fix** (frontend-only, NOT yet deployed as of this write): ROOT CAUSE of "picker missing after GitHub connect" = navigation gap, NOT a code bug. Picker page /dashboard/repos fully intact (button always rendered, picker modal fetches /repos/github, connected ✓, connect upsert on_conflict user_id+github_repo_id, no 3-repo limit). BUT sidebar had NO "Repositories" item AND dashboard CTAs ("Connect a GitHub repository" empty-state + "+ Connect Provider or Repository") pointed to /dashboard/settings/integrations = SLACK-ONLY page (no GitHub picker). FIXED: layout.tsx added "Repositories" nav item (flatItems, after Overview) + ReposIconSVG; DashboardClient.tsx both CTAs -> /dashboard/repos; repos/page.tsx picker modal -> 401="GitHub authorization needs to be renewed."+Reconnect GitHub(/auth/github), other err="Unable to load your GitHub repositories."+Retry, empty->honest empty state (was blank). Backend /repos/github verified healthy live (demo no-token -> 400 fail-closed; owner DB github_access_token present -> real list; types align str). OWNER ACTION needed later: browser click-through to connect the 4th repo (agent has no GitHub session).
+- **M18 real-account-only + 10-day unlimited trial** (deployed): /auth/demo now requires X-Internal-Secret (public 401, internal 200, GET method); LoginClient demo button removed; /login 2kB; billing.py TRIAL_DAYS=10 + in_unlimited_trial() -> effective monitored_api_limit=-1 (unlimited) during window; owner hashirattari73@gmail.com (3d206f17-7abc-4857-be29-00c8406ce16f) monitored_api_limit=-1 permanent; /billing/status live -> {"plan":"trial","monitored_api_limit":-1}.
+- **M17 FINAL PRODUCTION AUDIT** (complete): GH Actions daily-stripe pipeline (.github/workflows/stripe-changelog-cron.yml: fetch->process->daily-scan 06:00 UTC; needs exactly 2 secrets BACKEND_URL + INTERNAL_SECRET — BOTH CONFIGURED by user, repo pushed; do NOT modify this workflow or secrets), changelog_events title/severity/deadline fixed, run_daily_scan detections->api_detections fixed, process_new_events bounded 120, impact analysis 60.4s->2.8s, cron_run_log=10, daily_scan_runs=3, changelog_events=353, alerts=8, impact_analyses=85, REAL emails to owner (Resend sandbox: non-owner sends 403 until domain verified). Fire drill + auto-fix PR pipeline REAL and live-guarded.
+- Auth model: ensureSession() is a NO-OP now (no demo); dashboard layout no-token -> /login; real flow /auth/github -> callback -> storeSession -> legal-acceptance|dashboard. /auth/demo GET + X-Internal-Secret only (internal tests).
+- Live: backend backend-virid-ten-43.vercel.app (healthz 200); frontend frontend-eight-phi-60.vercel.app (/login / / /pricing /docs 200). Deployment via VERCEL_PROJECT_ID env-var, SEQUENTIAL, from each folder (root .vercel renamed .vercel.bak2 — KEEP; stray prj_6i3aRh5pWFnWASmzgjfq0T5MzeLM polluted — avoid).
 
 ## Key Files
-- frontend/lib/auth.ts (ensureSession/startDemoSession/storeSession/clearSession/getUser/getToken/isAuthed)
-- frontend/lib/api.ts (request()->ensureSession NO demo, githubCallback, buildGithubAuthUrl, DashboardStats.monitored_api_count)
-- frontend/app/dashboard/layout.tsx (auth gate line ~102, handleSignOut line ~469 -> /login, demo GitHub CTA in menu)
-- frontend/app/dashboard/DashboardClient.tsx (Connections/Monitored APIs stat, API Usage panel)
-- frontend/components/LoginClient.tsx, AuthCallbackClient.tsx; app/auth/github/page.tsx, app/auth/callback/page.tsx
-- backend/app/routers/repos.py (dashboard_stats, monitored_api_count), schemas.py (DashboardStatsOut), auth.py (demo/github_callback/me), consent.py
-- backend/app/routers/admin.py (/overview /health /users /alerts/pending), billing.py (/create-checkout-session /portal /status /webhooks)
+- frontend/app/dashboard/layout.tsx (sidebar flatItems incl NEW "Repositories"; ReposIconSVG; auth gate ~L102; account menu; sign-out -> /login)
+- frontend/app/dashboard/repos/page.tsx (+ Connect Repository picker modal: 401/Retry/empty states; connect upsert; auto-scan on connect)
+- frontend/app/dashboard/DashboardClient.tsx (both repo CTAs -> /dashboard/repos; Connections/Monitored APIs stats)
+- frontend/app/dashboard/health/scanner/page.tsx (dropdown scan; NOTE: connect picker lives on /dashboard/repos, NOT here)
+- frontend/lib/api.ts (request()/ApiError{status}, listRepos/listGithubRepos/connectRepo, githubCallback)
+- frontend/lib/auth.ts (getToken/getUser/storeSession/clearSession; ensureSession no-op)
+- backend/app/routers/repos.py (L106 /repos/github picker endpoint — token->list_user_repos, 401->expired msg, 502 infra; L130 list_connected; L259 /repos/connect upsert on_conflict=user_id,github_repo_id; L313 scan)
+- backend/app/github_client.py (L136 list_user_repos — GET /user/repos per_page 100 paginated, github_repo_id=str(id))
+- backend/app/billing.py (TRIAL_DAYS=10, in_unlimited_trial, get_user_plan_info)
+- backend/app/routers/auth.py (/demo GET guarded by require_internal_secret; /github/callback)
+- .github/workflows/stripe-changelog-cron.yml — DO NOT MODIFY (daily-scan infra, 2 secrets set)
+- .opencode/todo.md M17/M18 complete, M19 in progress
 
 ## Pending / Owner-level
+- M19 frontend deploy (in progress — after gates PASS) then live /dashboard/repos 200 check.
+- Browser click-through to connect 4th repo (owner action — agent has no GitHub session; everything code/Db/API-side verified).
 - Real browser OAuth round-trip test (interactive GitHub sign-in) — API chain fully verified, UI live.
-- RESEND_FROM_EMAIL verified sender in Resend (email feature needs it for real sends).
+- RESEND_FROM_EMAIL verified sender in Resend (email feature needs it for real sends; currently sandbox -> non-owner 403).
 - Stripe live keys if billing activated; /authorize/[token] legacy route exists.
 - Admin login requires is_admin=true user (demo is 403 — correct).

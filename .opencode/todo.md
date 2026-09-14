@@ -237,3 +237,17 @@
 - [x] S18.2.4: Frontend already renders -1 as 'Unlimited' (settings L468, billing L67-126, pricing '∞') — no FE change needed | size:S
 - [x] S18.2.5: GATES: backend pytest 144 passed; FE next build exit 0 (82 pages) | size:S
 - [x] S18.2.6: Deployed + live verified: /billing/status -> {"monitored_api_limit":-1 (trial unlimited)} on prod; /auth/demo public 401 / internal 200; FE /login / / /pricing /docs all 200 | size:S
+
+## M19: GitHub repo picker "missing" fix (4th repo connect) | status: completed
+### T19.1: Root cause | agent:Commander | status: completed
+- [x] S19.1.1: Picker page /dashboard/repos code fully intact + functional (button always rendered, picker fetches /repos/github, connected repos marked, connect upsert on_conflict user_id+github_repo_id — NO 3-repo limit anywhere) | size:S
+- [x] S19.1.2: ROOT CAUSE = navigation gap: sidebar flatItems had NO "Repositories" item; dashboard CTAs ("Connect a GitHub repository" empty-state + "+ Connect Provider or Repository") both pointed to /dashboard/settings/integrations which is a SLACK-ONLY page (no GitHub picker) — picker effectively invisible after GitHub OAuth | size:S
+- [x] S19.1.3: Backend chain live-verified healthy: /repos/github returns user's GitHub repos (no connected-filtering bug, types align str); demo (no token) -> 400 "No GitHub connection on file" fail-closed; owner DB has github_access_token set -> picker will list real repos | size:M
+### T19.2: Fix (frontend only, smallest clean) | agent:Commander | status: completed
+- [x] S19.2.1: dashboard/layout.tsx — added "Repositories" nav item (flatItems, after Overview) + ReposIconSVG | size:S
+- [x] S19.2.2: DashboardClient.tsx — empty-state "Connect a GitHub repository" link + Quick Actions "+ Connect Repository" button now -> /dashboard/repos (was Slack-only integrations) | size:S
+- [x] S19.2.3: repos/page.tsx picker modal — 401/GitHub-expired -> "GitHub authorization needs to be renewed." + [Reconnect GitHub] (/auth/github); other errors -> "Unable to load your GitHub repositories." + [Retry]; empty list -> honest "No GitHub repositories available to connect." empty state (was blank modal) | size:M
+### T19.3: Verify + deploy | agent:Reviewer | status: completed
+- [x] S19.3.1: tsc --noEmit PASS + next build PASS (82 pages) post-fix | size:M — tsc+build exit 0 (job_5c823e29); /dashboard/repos 4.09kB -> 4.28kB (modal changes in bundle)
+- [x] S19.3.2: Deploy frontend to Vercel prod (env-var, aliased frontend-eight-phi-60.vercel.app) + live /dashboard/repos 200 | size:M — deploy dpl AcGSG2EhGEm143Pvfz85cZ7rk7D5 -> 200; live bundle grep confirms all 3 new strings (Reconnect GitHub / Unable to load / empty state); /login 200
+- [x] S19.3.3: Report: root cause + files changed + gates + deployment + 4th-repo limitation (real OAuth click-through requires owner browser) | size:S — see status.md + conversation report

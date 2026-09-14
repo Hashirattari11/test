@@ -17,7 +17,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "→ POST /internal/changelog/fetch (all providers)"
-          curl --fail-with-body -sS -X POST \
+          curl --fail-with-body -sSL -X POST \
             "${BACKEND_URL}/internal/changelog/fetch" \
             -H "X-Internal-Secret: ${INTERNAL_SECRET}"
           echo
@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "→ POST /internal/changelog/process"
-          curl --fail-with-body -sS -X POST \
+          curl --fail-with-body -sSL -X POST \
             "${BACKEND_URL}/internal/changelog/process" \
             -H "X-Internal-Secret: ${INTERNAL_SECRET}"
           echo
@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "→ POST /internal/daily-scan (per-repo 24h due check)"
-          curl --fail-with-body -sS -X POST \
+          curl --fail-with-body -sSL -X POST \
             "${BACKEND_URL}/internal/daily-scan" \
             -H "X-Internal-Secret: ${INTERNAL_SECRET}"
           echo

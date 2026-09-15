@@ -90,12 +90,12 @@ export default function ApiKeysPage() {
       <Nav />
       <main className="container page">
         <p style={{ marginTop: 0 }}>
-          <Link href="/dashboard/settings">â† Back to settings</Link>
+          <Link href="/dashboard/settings">← Back to settings</Link>
         </p>
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ marginBottom: 4 }}>API Keys</h1>
           <p className="muted" style={{ margin: 0 }}>
-            Manage API keys for programmatic access to your AutoFix data.
+            Manage API keys for programmatic access to your Breaklytix data.
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export default function ApiKeysPage() {
           <div className="card" style={{ marginBottom: 16, borderColor: "var(--green)" }}>
             <h3 style={{ marginTop: 0 }}>Your new API key</h3>
             <p className="muted small" style={{ marginTop: 0 }}>
-              Copy this key now â€” it will not be shown again.
+              Copy this key now — it will not be shown again.
             </p>
             <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 12 }}>
               <code style={{ flex: 1, padding: "8px 12px", background: "var(--bg)", borderRadius: 6, fontSize: 13, wordBreak: "break-all" }}>
@@ -123,12 +123,12 @@ export default function ApiKeysPage() {
           <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h2 style={{ margin: 0 }}>Keys</h2>
             <button className="btn btn-primary btn-sm" onClick={generateKey} disabled={busy}>
-              {busy ? <><Spinner /> Generatingâ€¦</> : "+ Generate Key"}
+              {busy ? <><Spinner /> Generating…</> : "+ Generate Key"}
             </button>
           </div>
 
           {loading ? (
-            <div style={{ padding: 20 }}><Spinner /> Loadingâ€¦</div>
+            <div style={{ padding: 20 }}><Spinner /> Loading…</div>
           ) : !keys || keys.length === 0 ? (
             <p className="muted" style={{ padding: 20 }}>No API keys yet. Generate one to get started.</p>
           ) : (

@@ -1,4 +1,4 @@
-"""AutoFix API — FastAPI entrypoint.
+"""Breaklytix — FastAPI entrypoint.
 
 Run locally:
     uvicorn app.main:app --reload --port 8000
@@ -77,7 +77,7 @@ class SecurityHeadersMiddleware:
 
 
 app = FastAPI(
-    title="AutoFix API",
+    title="Breaklytix",
     version="1.0.0",
     description="Phase 3 — detect third-party API usage, alert on changes, auto-fix via PRs, and manage subscriptions.",
 )
@@ -150,7 +150,7 @@ app.include_router(impact.router)
 
 @app.get("/", tags=["meta"])
 def root() -> dict:
-    return {"service": "AutoFix API", "status": "ok", "docs": "/docs"}
+    return {"service": "Breaklytix", "status": "ok", "docs": "/docs"}
 
 
 @app.get("/healthz", tags=["meta"])
@@ -210,8 +210,8 @@ def debug_email(_: None = Depends(require_internal_secret)) -> dict:
         "frontend_base_url": settings.frontend_base_url,
         "test_send": send_email(
             recipient,
-            "AutoFix Debug Email",
-            "<p>Debug email from deployed AutoFix backend.</p>",
-            "Debug email from deployed AutoFix backend.",
+            "Breaklytix Debug Email",
+            "<p>Debug email from deployed Breaklytix backend.</p>",
+            "Debug email from deployed Breaklytix backend.",
         ),
     }

@@ -86,7 +86,7 @@ export default function RepoDetailPage() {
     try {
       const res = await scanRepo(id);
       setScanMsg(
-        `Scanned ${res.files_scanned} files â€” ${res.detections_found} detections across ${res.apis_detected.length} API(s).`
+        `Scanned ${res.files_scanned} files — ${res.detections_found} detections across ${res.apis_detected.length} API(s).`
       );
       await load();
     } catch (e: any) {
@@ -127,7 +127,7 @@ export default function RepoDetailPage() {
       <Nav />
       <main className="container page">
         <p style={{ marginTop: 0 }}>
-          <Link href="/dashboard">â† All repos</Link>
+          <Link href="/dashboard">← All repos</Link>
         </p>
 
         <div className="row" style={{ marginBottom: 8 }}>
@@ -136,11 +136,11 @@ export default function RepoDetailPage() {
             <p className="muted small" style={{ margin: 0 }}>
               {repo ? (
                 <>
-                  Branch <code>{repo.default_branch}</code> Â· Last scanned{" "}
+                  Branch <code>{repo.default_branch}</code> · Last scanned{" "}
                   {formatDate(repo.last_scanned_at)}
                 </>
               ) : (
-                "Loadingâ€¦"
+                "Loading…"
               )}
             </p>
           </div>
@@ -149,7 +149,7 @@ export default function RepoDetailPage() {
               Fixes {fixesCount !== null && <span className="pill pill-gray" style={{ marginLeft: 6 }}>{fixesCount}</span>}
             </Link>
             <button className="btn btn-primary" onClick={runScan} disabled={scanning}>
-              {scanning ? <><Spinner /> Scanningâ€¦</> : "Scan now"}
+              {scanning ? <><Spinner /> Scanning…</> : "Scan now"}
             </button>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               {data && data.footprint.length > 0 && (
@@ -172,7 +172,7 @@ export default function RepoDetailPage() {
                 disabled={simulating || !data || data.footprint.length === 0}
                 title="Fire a mock breaking change to demo alerting (TEST)."
               >
-                {simulating ? <><Spinner /> Simulatingâ€¦</> : "Send Test Alert"}
+                {simulating ? <><Spinner /> Simulating…</> : "Send Test Alert"}
               </button>
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function RepoDetailPage() {
                 </span>
               </div>
               <p className="muted small" style={{ margin: "8px 0 4px" }}>
-                Matched {simResult.matched_count} location(s)&nbsp;Â·&nbsp;Severity:{" "}
+                Matched {simResult.matched_count} location(s)&nbsp;·&nbsp;Severity:{" "}
                 <SeverityBadge severity={simResult.severity} reason={simResult.severity_reason} />
               </p>
               {simResult.matched_count > 0 && (
@@ -210,7 +210,7 @@ export default function RepoDetailPage() {
               )}
               <p className="small" style={{ margin: "12px 0 0" }}>
                 <span className={`pill ${simResult.email_sent ? "pill-green" : "pill-gray"}`}>
-                  {simResult.email_sent ? "âœ“ Test email sent" : "Email pending"}
+                  {simResult.email_sent ? "✓ Test email sent" : "Email pending"}
                 </span>
                 {" "}
                 <span className={simResult.alert_created ? "pill pill-green" : "pill pill-gray"}>
@@ -238,16 +238,16 @@ export default function RepoDetailPage() {
             </p>
             {scanSummary && scanSummary.totalProvidersDetected > 0 && (
               <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 12, color: "#6b7280" }}>
-                <span>ðŸ“Š {scanSummary.totalProvidersDetected} providers</span>
-                <span>ðŸ” {scanSummary.totalDetections} detections</span>
-                <span>âš¡ {scanSummary.highConfidenceProviders} high-confidence</span>
+                <span>📊 {scanSummary.totalProvidersDetected} providers</span>
+                <span>🔍 {scanSummary.totalDetections} detections</span>
+                <span>⚡ {scanSummary.highConfidenceProviders} high-confidence</span>
                 <span className="pill pill-gray" style={{ fontSize: 11 }}>Phase A: Detection Only</span>
               </div>
             )}
           </div>
 
           {data === null ? (
-            <div style={{ padding: 20 }}><Spinner /> Loadingâ€¦</div>
+            <div style={{ padding: 20 }}><Spinner /> Loading…</div>
           ) : data.footprint.length === 0 ? (
             <div className="empty">
               No API usage detected yet. Click <strong>Scan now</strong> to analyze this repo.
@@ -314,9 +314,9 @@ export default function RepoDetailPage() {
             </div>
           </div>
           {alerts === null ? (
-            <div style={{ padding: 20 }}><Spinner /> Loadingâ€¦</div>
+            <div style={{ padding: 20 }}><Spinner /> Loading…</div>
           ) : alerts.length === 0 ? (
-            <div className="empty">No alerts yet. You&apos;re all clear. ðŸŽ‰</div>
+            <div className="empty">No alerts yet. You&apos;re all clear. 🎉</div>
           ) : (
             <table className="table responsive-cards">
               <thead>
@@ -348,7 +348,7 @@ export default function RepoDetailPage() {
                         <div className="small" style={{ marginTop: 4 }}>{a.description}</div>
                         {a.source_url && (
                           <a className="small" href={a.source_url} target="_blank" rel="noreferrer">
-                            Changelog â†’
+                            Changelog →
                           </a>
                         )}
                       </td>
@@ -359,7 +359,7 @@ export default function RepoDetailPage() {
                             {a.line_number ? `:${a.line_number}` : ""}
                           </code>
                         ) : (
-                          "â€”"
+                          "—"
                         )}
                       </td>
                       <td data-label="Email">
@@ -409,7 +409,7 @@ export default function RepoDetailPage() {
           </div>
 
           {codeHealth === null ? (
-            <div style={{ padding: 20 }}><Spinner /> Loadingâ€¦</div>
+            <div style={{ padding: 20 }}><Spinner /> Loading…</div>
           ) : codeHealth.length === 0 ? (
             <div className="empty">
               No code health issues detected. Run a scan or wait for the next daily check.

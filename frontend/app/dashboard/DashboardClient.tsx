@@ -1,7 +1,7 @@
 ﻿"use client";
 
 // ---------------------------------------------------------------------------
-// AutoFix API â€” Monitoring Dashboard (Session-9 redesign, Session-10 prune).
+// Breaklytix — Monitoring Dashboard (Session-9 redesign, Session-10 prune).
 // EVERY metric comes from the real backend: provider connections, real
 // provider incidents, real alerts, real repository scans. NO simulated data.
 // Repository data lives ONLY in the Code Intelligence section; provider
@@ -119,7 +119,7 @@ export default function DashboardClient() {
     [incidents]
   );
 
-  // Real activity stream: connections, alerts, errors, incidents â€” no fabrications.
+  // Real activity stream: connections, alerts, errors, incidents — no fabrications.
   const activity: ActivityEvent[] = useMemo(() => {
     const ev: ActivityEvent[] = [];
     for (const c of connected) {
@@ -137,7 +137,7 @@ export default function DashboardClient() {
           ts: c.connected_at ?? "",
           kind: "provider_error",
           label: "Provider collector error",
-          detail: `${fmtProvider(c.provider)} â€” ${c.last_error}`,
+          detail: `${fmtProvider(c.provider)} — ${c.last_error}`,
           tone: "red",
         });
       }
@@ -148,7 +148,7 @@ export default function DashboardClient() {
         ts: a.created_at ?? "",
         kind: "break_alert",
         label: "Potential breaking change",
-        detail: `${a.change_type} Â· ${a.repo_name}`,
+        detail: `${a.change_type} · ${a.repo_name}`,
         tone: severityTone(a.severity) === "red" ? "red" : severityTone(a.severity) === "amber" ? "amber" : "green",
       });
     }
@@ -158,7 +158,7 @@ export default function DashboardClient() {
         ts: err.created_at,
         kind: "api_error",
         label: "API error detected",
-        detail: `${err.provider} Â· ${err.title}`,
+        detail: `${err.provider} · ${err.title}`,
         tone: err.severity === "critical" || err.severity === "high" ? "red" : "amber",
       });
     }
@@ -168,7 +168,7 @@ export default function DashboardClient() {
         ts: inc.started_at ?? "",
         kind: "incident",
         label: "Provider incident",
-        detail: `${fmtProvider(inc.provider)} â€” ${inc.title}`,
+        detail: `${fmtProvider(inc.provider)} — ${inc.title}`,
         tone: "red",
       });
     }
@@ -181,7 +181,7 @@ export default function DashboardClient() {
   // API Performance: REAL error counts bucketed by day (last 7 days).
   const perfBars = useMemo(() => {
     const days: { label: string; count: number }[] = [];
-    if (!errors) return days; // fetch failed â†’ insufficient data
+    if (!errors) return days; // fetch failed → insufficient data
     const now = Date.now();
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now - i * 86400000);
@@ -198,7 +198,7 @@ export default function DashboardClient() {
   const monitoringActive =
     connected.length > 0 || (repos ?? []).length > 0 || (stats?.scans_total ?? 0) > 0;
 
-  // Overall health overview â€” derived from REAL signals only.
+  // Overall health overview — derived from REAL signals only.
   type HealthStatus = "Healthy" | "Degraded" | "Unavailable" | "Unknown";
   const healthStatus: HealthStatus = useMemo(() => {
     if (connections === null && errors === null && incidents === null && stats === null) return "Unknown";
@@ -211,7 +211,7 @@ export default function DashboardClient() {
   const healthTone = (s: HealthStatus) =>
     s === "Healthy" ? "green" : s === "Degraded" ? "amber" : "gray";
 
-  // Open issues sorted Critical â†’ High â†’ Medium â†’ Low; each links to its detail page.
+  // Open issues sorted Critical → High → Medium → Low; each links to its detail page.
   const openIssues = useMemo(() => {
     const order: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
     return [...errorIssues].sort(
@@ -238,14 +238,14 @@ export default function DashboardClient() {
 
   return (
     <div className="mc-grid mc-stack" style={{ padding: 4 }}>
-      {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Header ─────────────────────────────────────────────── */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Monitoring Dashboard</h1>
           <p className="mc-header-note" style={{ margin: "4px 0 0" }}>
-            {connected.length} connected provider{connected.length !== 1 ? "s" : ""} Â·{" "}
+            {connected.length} connected provider{connected.length !== 1 ? "s" : ""} ·{" "}
             {(repos ?? []).length} monitored repositor{(repos ?? []).length !== 1 ? "ies" : "y"}
-            {lastUpdated ? ` Â· updated ${timeAgo(lastUpdated)}` : ""}
+            {lastUpdated ? ` · updated ${timeAgo(lastUpdated)}` : ""}
           </p>
         </div>
         <Link href="/dashboard/health" className="mc-status" style={{ textDecoration: "none" }}>
@@ -254,7 +254,7 @@ export default function DashboardClient() {
         </Link>
       </div>
 
-      {/* â”€â”€ Metric cards (real) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Metric cards (real) ────────────────────────────────── */}
       <div className="mc-grid mc-cards">
         <StatCard label="Connections" value={connected.length} tone={connected.length > 0 ? "accent" : "gray"} delta="provider API keys connected" />
         <StatCard
@@ -290,12 +290,12 @@ export default function DashboardClient() {
         />
       </div>
 
-      {/* â”€â”€ API Performance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── API Performance ────────────────────────────────────── */}
       <div className="mc-panel">
         <h3>API Performance</h3>
         {perfBars.length === 0 ? (
           <p className="mc-empty">
-            No performance history yet â€” error telemetry begins once monitoring runs. (Response-time
+            No performance history yet — error telemetry begins once monitoring runs. (Response-time
             telemetry is not collected; this graph plots real detected API errors.)
           </p>
         ) : (
@@ -310,13 +310,13 @@ export default function DashboardClient() {
               ))}
             </div>
             <p className="mc-sub" style={{ marginTop: 8 }}>
-              Real API errors per day (last 7 days) â€” {errorIssues.length} total detected.
+              Real API errors per day (last 7 days) — {errorIssues.length} total detected.
             </p>
           </>
         )}
       </div>
 
-      {/* â”€â”€ Open Incidents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Open Incidents ─────────────────────────────────────── */}
       <div className="mc-panel">
         <h3>Open Incidents</h3>
         {openIncidents.length === 0 ? (
@@ -327,7 +327,7 @@ export default function DashboardClient() {
               <div key={`${inc.provider}-${i}`} className="mc-row">
                 <span className="mc-dot red" />
                 <span style={{ minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  <span style={{ fontWeight: 600 }}>{fmtProvider(inc.provider)}</span> â€” {inc.title}
+                  <span style={{ fontWeight: 600 }}>{fmtProvider(inc.provider)}</span> — {inc.title}
                 </span>
                 <Badge tone="red" dot>{inc.status}</Badge>
                 <span className="mc-sub" style={{ whiteSpace: "nowrap" }}>{timeAgo(inc.started_at)}</span>
@@ -336,11 +336,11 @@ export default function DashboardClient() {
           </div>
         )}
         <Link href="/dashboard/health/incidents" style={{ fontSize: 12, color: "var(--accent)" }}>
-          View all incidents â†’
+          View all incidents →
         </Link>
       </div>
 
-      {/* â”€â”€ API Usage (real: changelog monitors + code detections) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── API Usage (real: changelog monitors + code detections) ───────────────────────────────── */}
       <div className="mc-panel">
         <h3>API Usage</h3>
         <div className="mc-grid mc-cards" style={{ marginBottom: 12 }}>
@@ -371,12 +371,12 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      {/* â”€â”€ Recent Activity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Recent Activity ────────────────────────────────────── */}
       <div className="mc-panel">
         <h3>Recent Activity</h3>
         {activity.length === 0 ? (
           <p className="mc-empty">
-            No activity yet â€” events appear when providers are connected, keys verified, incidents
+            No activity yet — events appear when providers are connected, keys verified, incidents
             detected, or scans complete.
           </p>
         ) : (
@@ -395,7 +395,7 @@ export default function DashboardClient() {
         )}
       </div>
 
-      {/* â”€â”€ Code Intelligence (repository data ONLY here) â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Code Intelligence (repository data ONLY here) ──────── */}
       <div className="mc-panel">
         <h3>Code Intelligence</h3>
         {!stats || (stats.repos === 0 && (repos ?? []).length === 0) ? (
@@ -413,7 +413,7 @@ export default function DashboardClient() {
         )}
       </div>
 
-      {/* â”€â”€ Potential API Breaks (real open alerts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Potential API Breaks (real open alerts) ────────────── */}
       <div className="mc-panel">
         <h3>Potential API Breaks</h3>
         {!alerts ? (
@@ -445,11 +445,11 @@ export default function DashboardClient() {
           </table>
         )}
         <div style={{ marginTop: 10 }}>
-          <Link href="/dashboard/alerts" style={{ fontSize: 12, color: "var(--accent)" }}>View all alerts â†’</Link>
+          <Link href="/dashboard/alerts" style={{ fontSize: 12, color: "var(--accent)" }}>View all alerts →</Link>
         </div>
       </div>
 
-      {/* â”€â”€ Open Health Issues (real, severity-sorted, linked) â”€â”€â”€â”€â”€ */}
+      {/* ── Open Health Issues (real, severity-sorted, linked) ───── */}
       <div className="mc-panel">
         <h3>Open Health Issues</h3>
         {!errors ? (
@@ -468,7 +468,7 @@ export default function DashboardClient() {
                 <span className={`mc-dot ${severityTone(iss.severity) === "red" ? "red" : severityTone(iss.severity) === "amber" ? "amber" : "gray"}`} />
                 <span style={{ minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   <span style={{ fontWeight: 600 }}>{iss.title}</span>{" "}
-                  <span style={{ fontSize: 12, color: "var(--muted)" }}>Â· {iss.provider}</span>
+                  <span style={{ fontSize: 12, color: "var(--muted)" }}>· {iss.provider}</span>
                 </span>
                 <Badge tone={severityTone(iss.severity)} dot>{severityLabel(iss.severity)}</Badge>
                 <span className="mc-sub" style={{ whiteSpace: "nowrap" }}>{timeAgo(iss.created_at)}</span>
@@ -477,11 +477,11 @@ export default function DashboardClient() {
           </div>
         )}
         <Link href="/dashboard/health/issues" style={{ fontSize: 12, color: "var(--accent)" }}>
-          View all issues â†’
+          View all issues →
         </Link>
       </div>
 
-      {/* â”€â”€ Quick Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Quick Actions ──────────────────────────────────────── */}
       <div className="mc-panel">
         <h3>Quick Actions</h3>
         <div className="mc-actions">

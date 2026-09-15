@@ -135,9 +135,9 @@ async def _create_fix_pr(repo: dict, fix: dict, token: str) -> tuple[str, int]:
         raise GitHubError(f"Validation failed ({detail}); PR not created.")
 
     head_branch = f"autofix/{fix_id_short}-{int(datetime.now(timezone.utc).timestamp())}"
-    title = f"AutoFix: {rule.get('title')} ({fix_id_short})"
+    title = f"Breaklytix: {rule.get('title')} ({fix_id_short})"
     body = pr_lib.build_pr_body(
-        rule_title=rule.get("title") or "AutoFix",
+        rule_title=rule.get("title") or "Breaklytix",
         description=rule.get("description") or "",
         file_path=fix["file_path"],
         diff=fix.get("diff_preview") or "",
@@ -152,7 +152,7 @@ async def _create_fix_pr(repo: dict, fix: dict, token: str) -> tuple[str, int]:
         head_branch=head_branch,
         file_path=fix["file_path"],
         new_content=new_content,
-        commit_message=f"AutoFix: {rule.get('title')}",
+        commit_message=f"Breaklytix: {rule.get('title')}",
         title=title,
         body=body,
         current_sha=current["sha"],

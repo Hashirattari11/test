@@ -1,4 +1,4 @@
-"""Weekly digest email for AutoFix users.
+"""Weekly digest email for Breaklytix users.
 
 Sent every Monday summarizing the past week's activity:
 - APIs monitored
@@ -149,7 +149,7 @@ def render_digest_email(
     if len(repos) > 5:
         repo_names += f" and {len(repos) - 5} more"
 
-    subject = f"📊 Your AutoFix Weekly Digest — {len(repos)} repo(s), {total_alerts} alert(s)"
+    subject = f"📊 Your Breaklytix Weekly Digest — {len(repos)} repo(s), {total_alerts} alert(s)"
 
     # Build API list
     api_list = ", ".join(apis_monitored) if apis_monitored else "None yet"
@@ -168,7 +168,7 @@ def render_digest_email(
 
     text = f"""Hi there,
 
-Here's your AutoFix weekly summary for the past 7 days.
+Here's your Breaklytix weekly summary for the past 7 days.
 
 📦 Repositories: {repo_names}
 🔍 APIs Monitored: {api_list}
@@ -183,7 +183,7 @@ Here's your AutoFix weekly summary for the past 7 days.
 
 View your dashboard: {settings.frontend_origins.split(",")[0].strip()}/dashboard
 
-- AutoFix API
+- Breaklytix
 """
 
     # HTML version
@@ -198,7 +198,7 @@ View your dashboard: {settings.frontend_origins.split(",")[0].strip()}/dashboard
 
     html = f"""\
 <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;">
-  <h2 style="margin:0 0 4px;">📊 Your AutoFix Weekly Digest</h2>
+  <h2 style="margin:0 0 4px;">📊 Your Breaklytix Weekly Digest</h2>
   <p style="color:#555;margin:0 0 16px;font-size:13px;">
     Summary for the past 7 days across {len(repos)} repository(ies)
   </p>
@@ -222,7 +222,7 @@ View your dashboard: {settings.frontend_origins.split(",")[0].strip()}/dashboard
     <a href="{settings.frontend_origins.split(",")[0].strip()}/dashboard" style="color:#635bff;">View your dashboard &rarr;</a>
   </p>
 
-  <p style="color:#999;font-size:12px;margin-top:20px;">&mdash; AutoFix API</p>
+  <p style="color:#999;font-size:12px;margin-top:20px;">&mdash; Breaklytix</p>
 </div>"""
 
     return subject, html, text

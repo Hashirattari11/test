@@ -85,7 +85,7 @@ def test_sender_problem_malformed_from(monkeypatch):
 
 def test_sender_problem_valid(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
-    monkeypatch.setattr(email_service.settings, "resend_from_email", "AutoFix <no-reply@autofix.dev>")
+    monkeypatch.setattr(email_service.settings, "resend_from_email", "Breaklytix <no-reply@autofix.dev>")
     assert sender_problem() is None
 
 
@@ -93,15 +93,15 @@ def test_sender_problem_valid_name_with_spaces(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
     monkeypatch.setattr(
         email_service.settings, "resend_from_email",
-        "AutoFix API <onboarding@resend.dev>",
+        "Breaklytix <onboarding@resend.dev>",
     )
     assert sender_problem() is None
 
 
 def test_sender_is_sandbox(monkeypatch):
-    monkeypatch.setattr(email_service.settings, "resend_from_email", "AutoFix API <onboarding@resend.dev>")
+    monkeypatch.setattr(email_service.settings, "resend_from_email", "Breaklytix <onboarding@resend.dev>")
     assert sender_is_sandbox() is True
-    monkeypatch.setattr(email_service.settings, "resend_from_email", "AutoFix <a@b.dev>")
+    monkeypatch.setattr(email_service.settings, "resend_from_email", "Breaklytix <a@b.dev>")
     assert sender_is_sandbox() is False
 
 
@@ -160,7 +160,7 @@ def test_send_fails_closed_on_sender_config(monkeypatch):
 
 def test_send_success_returns_message_id(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
-    monkeypatch.setattr(email_service.settings, "resend_from_email", "AutoFix <a@b.dev>")
+    monkeypatch.setattr(email_service.settings, "resend_from_email", "Breaklytix <a@b.dev>")
     monkeypatch.setattr(email_service, "_recent_same_fingerprint", lambda fp: False)
     monkeypatch.setattr(email_service, "_daily_count", lambda uid: 0)
     monkeypatch.setattr(email_service, "_insert_delivery", lambda **kw: None)
@@ -176,7 +176,7 @@ def test_send_success_returns_message_id(monkeypatch):
 
 def test_send_failure_categorizes_rejected(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
-    monkeypatch.setattr(email_service.settings, "resend_from_email", "AutoFix <a@b.dev>")
+    monkeypatch.setattr(email_service.settings, "resend_from_email", "Breaklytix <a@b.dev>")
     monkeypatch.setattr(email_service, "_recent_same_fingerprint", lambda fp: False)
     monkeypatch.setattr(email_service, "_daily_count", lambda uid: 0)
     monkeypatch.setattr(email_service, "_insert_delivery", lambda **kw: None)
@@ -192,7 +192,7 @@ def test_send_failure_categorizes_rejected(monkeypatch):
 
 def test_send_failure_categorizes_rate_limit(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
-    monkeypatch.setattr(email_service.settings, "resend_from_email", "AutoFix <a@b.dev>")
+    monkeypatch.setattr(email_service.settings, "resend_from_email", "Breaklytix <a@b.dev>")
     monkeypatch.setattr(email_service, "_recent_same_fingerprint", lambda fp: False)
     monkeypatch.setattr(email_service, "_daily_count", lambda uid: 0)
     monkeypatch.setattr(email_service, "_insert_delivery", lambda **kw: None)
@@ -208,7 +208,7 @@ def test_send_failure_categorizes_rate_limit(monkeypatch):
 
 def test_send_dedup_suppresses_duplicate(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
-    monkeypatch.setattr(email_service.settings, "resend_from_email", "AutoFix <a@b.dev>")
+    monkeypatch.setattr(email_service.settings, "resend_from_email", "Breaklytix <a@b.dev>")
     sent = []
     monkeypatch.setattr(email_service, "_recent_same_fingerprint", lambda fp: True)
     monkeypatch.setattr(email_service, "_insert_delivery", lambda **kw: None)
@@ -224,7 +224,7 @@ def test_send_dedup_suppresses_duplicate(monkeypatch):
 
 def test_send_daily_cap(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
-    monkeypatch.setattr(email_service.settings, "resend_from_email", "AutoFix <a@b.dev>")
+    monkeypatch.setattr(email_service.settings, "resend_from_email", "Breaklytix <a@b.dev>")
     monkeypatch.setattr(email_service, "_recent_same_fingerprint", lambda fp: False)
     monkeypatch.setattr(email_service, "_daily_count", lambda uid: email_service.MAX_ALERT_EMAILS_PER_DAY + 1)
     monkeypatch.setattr(email_service, "_insert_delivery", lambda **kw: None)

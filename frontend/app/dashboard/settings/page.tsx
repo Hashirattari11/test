@@ -23,7 +23,7 @@ const PREF_LABELS: Record<string, { title: string; desc: string }> = {
   quota: { title: "Quota usage", desc: "Email when plan or API quotas are nearly exhausted" },
   provider_incidents: { title: "Provider incidents", desc: "Email when a provider reports an incident status" },
   anomalies: { title: "Anomalies", desc: "Email about reliability anomalies in your integrations" },
-  auto_fix: { title: "Auto-fix results", desc: "Email when AutoFix applies or proposes a fix" },
+  auto_fix: { title: "Auto-fix results", desc: "Email when Breaklytix applies or proposes a fix" },
   scan_results: { title: "Scan results", desc: "Email when an on-demand repo scan completes" },
   digest: { title: "Weekly digest", desc: "Receive a weekly summary of alerts, fixes, and API usage" },
 };
@@ -323,7 +323,7 @@ export default function SettingsPage() {
             <section className="p-settings-card p-anim-fade-up" key="theme" style={{ marginTop: 20 }}>
               <h3 style={{ margin: "0 0 4px" }}>Theme</h3>
               <p style={{ margin: "0 0 16px", fontSize: 14, color: "var(--muted)" }}>
-                Choose between light, dark, or let AutoFix follow your operating system preference.
+                Choose between light, dark, or let Breaklytix follow your operating system preference.
               </p>
               <div className="p-segmented" style={{ width: "fit-content" }}>
                 {(["light", "dark", "system"] as ThemePref[]).map((p) => (

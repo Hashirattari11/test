@@ -136,7 +136,7 @@ export default function CliPage() {
         {/* Platform Downloads */}
         <div className="cli-section" style={{ animation: "fadeInUp 0.6s ease 0.2s both" }}>
           <h2>Download & Install</h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", margin: "0 0 16px" }}>Choose your platform to install the AutoFix CLI:</p>
+          <p style={{ fontSize: 14, color: "var(--muted)", margin: "0 0 16px" }}>Choose your platform to install the Breaklytix CLI:</p>
           <div className="cli-platform-grid">
             <div className="cli-platform-card" onClick={() => copyCmd("npm install -g autofix-cli")}>
               <div className="icon">🐧</div>

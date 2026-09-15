@@ -145,7 +145,7 @@ function IntegrationsContent() {
           ) : (
             <div style={{ marginTop: 16 }}>
               <div className="preference-desc" style={{ marginBottom: 16 }}>
-                Not connected. Set up the AutoFix Slack app to start receiving
+                Not connected. Set up the Breaklytix Slack app to start receiving
                 alerts in your workspace.
               </div>
               <button className="btn btn-primary" onClick={connect} disabled={busy === "connect"}>

@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const doc = getDoc(params.slug);
   if (!doc) return {};
   return {
-    title: `${doc.title} | AutoFix Documentation`,
+    title: `${doc.title} | Breaklytix Documentation`,
     description: doc.summary,
     robots: { index: true, follow: true },
     alternates: { canonical: `https://frontend-eight-phi-60.vercel.app/docs/${doc.slug}` },

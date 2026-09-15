@@ -1,4 +1,4 @@
-// AutoFix documentation registry — REAL features only.
+// Breaklytix documentation registry — REAL features only.
 // Structured content blocks (no external markdown dependency):
 //   h: heading, p: paragraph, ul: bullet list, code: pre-formatted block, tip: callout
 
@@ -20,14 +20,14 @@ export type DocArticle = {
 };
 
 export const DOC_SECTIONS: { name: string; blurb: string }[] = [
-  { name: "Getting Started", blurb: "What AutoFix watches, how alerts work, and your first scan." },
+  { name: "Getting Started", blurb: "What Breaklytix watches, how alerts work, and your first scan." },
   { name: "Authentication & GitHub", blurb: "Sign in securely with GitHub and connect your repositories." },
   { name: "Provider Monitoring", blurb: "Which APIs we monitor for breaking changes." },
   { name: "Runtime Intelligence", blurb: "Live health signals — errors, failures, incidents, anomalies, rate limits." },
   { name: "Code Break Detection", blurb: "Static analysis that finds where provider changes hit your code." },
   { name: "Impact Engine", blurb: "See what a breaking change means for your repos — and fire drills." },
   { name: "Alerts & Notifications", blurb: "Email and bell alerts, preferences, and the daily digest." },
-  { name: "Agency Mode", blurb: "Manage external clients that install AutoFix on their repos." },
+  { name: "Agency Mode", blurb: "Manage external clients that install Breaklytix on their repos." },
   { name: "CLI & Integrations", blurb: "The developer CLI and Slack integration." },
   { name: "Settings & Security", blurb: "Profile, API keys, security model, and legal policies." },
   { name: "Billing & Plans", blurb: "Plans, monitored-API limits, and invoice details." },
@@ -38,21 +38,21 @@ export const DOCS: DocArticle[] = [
   // ─────────────────────────── Getting Started ───────────────────────────
   {
     slug: "overview",
-    title: "What is AutoFix API?",
+    title: "What is Breaklytix?",
     section: "Getting Started",
     order: 1,
-    summary: "AutoFix detects the third-party APIs your code uses and alerts you the moment a provider ships a breaking change.",
+    summary: "Breaklytix detects the third-party APIs your code uses and alerts you the moment a provider ships a breaking change.",
     related: ["quickstart", "github-connection"],
     content: [
-      { t: "p", x: "AutoFix monitors your repositories and the public changelogs of the APIs you depend on. When a provider announces a breaking change — a renamed endpoint, a removed field, a new required header — AutoFix matches it against the API usage in your code and tells you exactly where you need to change things." },
+      { t: "p", x: "Breaklytix monitors your repositories and the public changelogs of the APIs you depend on. When a provider announces a breaking change — a renamed endpoint, a removed field, a new required header — Breaklytix matches it against the API usage in your code and tells you exactly where you need to change things." },
       { t: "ul", x: [
         "Provider monitoring: Slack, Stripe, Shopify, Twilio, SendGrid, GitHub, OpenAI, Anthropic, Vercel, Supabase, Firebase, Resend and more.",
         "Code break detection: static analysis of your repositories to find affected call sites.",
         "Runtime intelligence: health scores, error rates, incidents, and rate-limit events per provider.",
         "Auto-fix PRs: optional GitHub pull requests that apply mechanical fixes to your code.",
-        "Agency mode: run AutoFix for client repositories under your own GitHub App.",
+        "Agency mode: run Breaklytix for client repositories under your own GitHub App.",
       ] },
-      { t: "tip", x: "Start by connecting GitHub. AutoFix works with read-only access — it never pushes to your repositories unless you explicitly enable auto-fix PRs." },
+      { t: "tip", x: "Start by connecting GitHub. Breaklytix works with read-only access — it never pushes to your repositories unless you explicitly enable auto-fix PRs." },
     ],
   },
   {
@@ -70,7 +70,7 @@ export const DOCS: DocArticle[] = [
         "4. The scanner reports API usage in your code and any matches against recent provider changes.",
         "5. Review your notifications tab to control which alerts reach your inbox.",
       ] },
-      { t: "p", x: "That's it — AutoFix's background cron jobs fetch provider changelogs every morning (08:00 UTC), process them, and run the daily repository scan." },
+      { t: "p", x: "That's it — Breaklytix's background cron jobs fetch provider changelogs every morning (08:00 UTC), process them, and run the daily repository scan." },
     ],
   },
 
@@ -80,10 +80,10 @@ export const DOCS: DocArticle[] = [
     title: "Signing in with GitHub",
     section: "Authentication & GitHub",
     order: 1,
-    summary: "AutoFix uses GitHub OAuth for authentication. No passwords, no tokens stored in our database.",
+    summary: "Breaklytix uses GitHub OAuth for authentication. No passwords, no tokens stored in our database.",
     related: ["github-connection", "security-model"],
     content: [
-      { t: "p", x: "AutoFix authenticates exclusively through GitHub OAuth. When you sign in: GitHub returns your public profile, email, and a short-lived token. AutoFix encrypts that token (Fernet) and stores it so background scans can read your repositories." },
+      { t: "p", x: "Breaklytix authenticates exclusively through GitHub OAuth. When you sign in: GitHub returns your public profile, email, and a short-lived token. Breaklytix encrypts that token (Fernet) and stores it so background scans can read your repositories." },
       { t: "ul", x: [
         "Scopes requested: read:user, user:email, public_repo. All are read-only.",
         "Your GitHub access token is encrypted before storage; it is never returned to the browser.",
@@ -133,10 +133,10 @@ export const DOCS: DocArticle[] = [
     title: "Monitored providers",
     section: "Provider Monitoring",
     order: 1,
-    summary: "The API providers AutoFix tracks, and how coverage works.",
+    summary: "The API providers Breaklytix tracks, and how coverage works.",
     related: ["runtime-intelligence", "changelog"],
     content: [
-      { t: "p", x: "AutoFix tracks public changelogs and release notes for a curated set of providers and monitors your usage of each." },
+      { t: "p", x: "Breaklytix tracks public changelogs and release notes for a curated set of providers and monitors your usage of each." },
       { t: "ul", x: [
         "Payments: Stripe",
         "Commerce: Shopify",
@@ -156,7 +156,7 @@ export const DOCS: DocArticle[] = [
     summary: "How breaking changes are collected, matched, and turned into alerts.",
     related: ["alerts", "impact-overview"],
     content: [
-      { t: "p", x: "Every morning at 08:00 UTC AutoFix fetches the latest changelog entries for each monitored provider. New events are processed at 08:15 UTC: they are classified (new feature, bug fix, or breaking change) and scored for severity and confidence." },
+      { t: "p", x: "Every morning at 08:00 UTC Breaklytix fetches the latest changelog entries for each monitored provider. New events are processed at 08:15 UTC: they are classified (new feature, bug fix, or breaking change) and scored for severity and confidence." },
       { t: "ul", x: [
         "Breaking changes are matched against the API usage detected in your repositories.",
         "High-confidence matches become alerts; lower-confidence ones appear as notices.",
@@ -174,7 +174,7 @@ export const DOCS: DocArticle[] = [
     summary: "Live health signals for each provider you connect: errors, failures, incidents, and rate limits.",
     related: ["api-errors", "provider-incidents", "rate-limit-events"],
     content: [
-      { t: "p", x: "Runtime Intelligence shows the operational health of the APIs your app depends on, based on health checks and incident feeds AutoFix collects." },
+      { t: "p", x: "Runtime Intelligence shows the operational health of the APIs your app depends on, based on health checks and incident feeds Breaklytix collects." },
       { t: "ul", x: [
         "Health overview: aggregate score and status (Healthy / Degraded / Unavailable / Unknown) per provider.",
         "API errors & failures: elevated error rates on your integrations.",
@@ -193,7 +193,7 @@ export const DOCS: DocArticle[] = [
     summary: "Elevated error rates and failed calls on your integrations.",
     related: ["runtime-intelligence"],
     content: [
-      { t: "p", x: "The API Errors page lists observed errors on your monitored connections, and Failures tracks calls that did not complete. AutoFix correlates these with provider incidents so you can tell a provider outage from a code regression." },
+      { t: "p", x: "The API Errors page lists observed errors on your monitored connections, and Failures tracks calls that did not complete. Breaklytix correlates these with provider incidents so you can tell a provider outage from a code regression." },
     ],
   },
   {
@@ -204,7 +204,7 @@ export const DOCS: DocArticle[] = [
     summary: "Official incident status for monitored providers.",
     related: ["runtime-intelligence", "alerts"],
     content: [
-      { t: "p", x: "AutoFix watches each provider's status page and reflects incidents as investigating, identified, monitoring, or resolved. When a provider you use has an open incident, it appears across the dashboard and can trigger alerts." },
+      { t: "p", x: "Breaklytix watches each provider's status page and reflects incidents as investigating, identified, monitoring, or resolved. When a provider you use has an open incident, it appears across the dashboard and can trigger alerts." },
     ],
   },
   {
@@ -228,7 +228,7 @@ export const DOCS: DocArticle[] = [
     summary: "Static analysis results that locate the code a provider change affects.",
     related: ["repository-scanner", "impact-overview"],
     content: [
-      { t: "p", x: "When a provider change matches API usage in your code, AutoFix records a potential break with the exact file location, the affected symbol, and the change details. Code Break Detection pages list potential breaks, deprecated APIs, and SDK/library check results." },
+      { t: "p", x: "When a provider change matches API usage in your code, Breaklytix records a potential break with the exact file location, the affected symbol, and the change details. Code Break Detection pages list potential breaks, deprecated APIs, and SDK/library check results." },
       { t: "tip", x: "Labels use 'static analysis' wording — these are code-level findings, not runtime measurements." },
     ],
   },
@@ -248,13 +248,13 @@ export const DOCS: DocArticle[] = [
     title: "Auto-fix PRs",
     section: "Provider Monitoring",
     order: 9,
-    summary: "Mechanical fixes AutoFix proposes when a change is unambiguous.",
+    summary: "Mechanical fixes Breaklytix proposes when a change is unambiguous.",
     related: ["code-breaks", "impact-overview"],
     content: [
-      { t: "p", x: "For changes that are mechanically safe (a renamed export, a swapped argument order), AutoFix can open a GitHub pull request with the fix. Auto-fix PRs are opt-in and clearly labeled for review before merge." },
+      { t: "p", x: "For changes that are mechanically safe (a renamed export, a swapped argument order), Breaklytix can open a GitHub pull request with the fix. Auto-fix PRs are opt-in and clearly labeled for review before merge." },
       { t: "ul", x: [
         "PRs are created only when a fix is unambiguous and confidence is high.",
-        "You control AutoFix PR creation from repository settings.",
+        "You control Breaklytix PR creation from repository settings.",
         "Merge at your own pace — nothing is merged automatically.",
       ] },
     ],
@@ -315,7 +315,7 @@ export const DOCS: DocArticle[] = [
     summary: "The alert lifecycle: created, matched, resolved, ignored.",
     related: ["notifications", "email-alerts"],
     content: [
-      { t: "p", x: "Alerts are created when a breaking provider change matches your code, an incident affects a provider you use, or AutoFix detects an anomaly. The bell icon in the dashboard shows open alerts; the Alerts page manages the full list with severity and status filters." },
+      { t: "p", x: "Alerts are created when a breaking provider change matches your code, an incident affects a provider you use, or Breaklytix detects an anomaly. The bell icon in the dashboard shows open alerts; the Alerts page manages the full list with severity and status filters." },
       { t: "ul", x: [
         "Statuses: open, resolved, ignored.",
         "Test alerts are marked and excluded from your real counts.",
@@ -347,7 +347,7 @@ export const DOCS: DocArticle[] = [
     summary: "How alert emails are sent, and what 'accepted by provider' means.",
     related: ["notifications"],
     content: [
-      { t: "p", x: "Alert emails are sent through Resend. Delivery status is reported honestly: 'accepted by provider' means Resend accepted the message — final inbox delivery is handled by the provider, not AutoFix." },
+      { t: "p", x: "Alert emails are sent through Resend. Delivery status is reported honestly: 'accepted by provider' means Resend accepted the message — final inbox delivery is handled by the provider, not Breaklytix." },
       { t: "ul", x: [
         "Failures are categorized (sender configuration, rejected, rate limited, network, unknown) and surfaced in the UI.",
         "If the sender is still in Resend's sandbox (onboarding@resend.dev), emails only reach the account owner — the UI warns you with '(sandbox sender)'.",
@@ -363,7 +363,7 @@ export const DOCS: DocArticle[] = [
     title: "Agency Mode",
     section: "Provider Monitoring",
     order: 16,
-    summary: "Run AutoFix for external clients through your own GitHub App installation.",
+    summary: "Run Breaklytix for external clients through your own GitHub App installation.",
     related: ["agency-invites", "github-connection"],
     content: [
       { t: "p", x: "Agency Mode lets an agency or consultancy monitor client repositories. Clients install your agency's GitHub App (rather than their own), and you manage access through the Agency dashboard." },
@@ -397,10 +397,10 @@ export const DOCS: DocArticle[] = [
     title: "Developer CLI",
     section: "Provider Monitoring",
     order: 18,
-    summary: "Scan a repository and get AutoFix findings without leaving the terminal.",
+    summary: "Scan a repository and get Breaklytix findings without leaving the terminal.",
     related: ["repository-scanner", "api-keys"],
     content: [
-      { t: "p", x: "The developer CLI lets you scan a repository from your terminal using your AutoFix API key. It produces the same static-analysis findings as the web scanner." },
+      { t: "p", x: "The developer CLI lets you scan a repository from your terminal using your Breaklytix key. It produces the same static-analysis findings as the web scanner." },
       { t: "code", x: "autofix scan <repo-url>\nautofix status\nautofix alerts --open" },
       { t: "tip", x: "Generate your API key under Settings -> API Keys. Treat it like a password." },
     ],
@@ -413,7 +413,7 @@ export const DOCS: DocArticle[] = [
     summary: "Mirror alerts to a Slack channel.",
     related: ["alerts", "notifications"],
     content: [
-      { t: "p", x: "Settings -> Integrations connects the AutoFix Slack app. When alerts are created, AutoFix can mirror them to your channel so the whole team sees breaking changes without leaving Slack." },
+      { t: "p", x: "Settings -> Integrations connects the Breaklytix Slack app. When alerts are created, Breaklytix can mirror them to your channel so the whole team sees breaking changes without leaving Slack." },
       { t: "tip", x: "Slack delivery is best-effort: if the webhook is unreachable, the alert still exists in the dashboard bell and email." },
     ],
   },
@@ -457,10 +457,10 @@ export const DOCS: DocArticle[] = [
     title: "API keys",
     section: "Provider Monitoring",
     order: 22,
-    summary: "Programmatic access to your AutoFix data for scripts and the CLI.",
+    summary: "Programmatic access to your Breaklytix data for scripts and the CLI.",
     related: ["cli"],
     content: [
-      { t: "p", x: "Settings -> API Keys generates scoped keys for programmatic access. Store them safely — AutoFix displays them once and never returns them again." },
+      { t: "p", x: "Settings -> API Keys generates scoped keys for programmatic access. Store them safely — Breaklytix displays them once and never returns them again." },
       { t: "tip", x: "Rotate keys by revoking and re-issuing when they may have leaked." },
     ],
   },
@@ -469,7 +469,7 @@ export const DOCS: DocArticle[] = [
     title: "Security model & privacy",
     section: "Provider Monitoring",
     order: 23,
-    summary: "Encryption, scoping, and why AutoFix never sees your keys.",
+    summary: "Encryption, scoping, and why Breaklytix never sees your keys.",
     related: ["privacy-policy", "terms-of-service"],
     content: [
       { t: "ul", x: [
@@ -491,7 +491,7 @@ export const DOCS: DocArticle[] = [
     summary: "What we collect, store, and share.",
     related: ["terms-of-service", "security-model"],
     content: [
-      { t: "p", x: "AutoFix collects your GitHub profile, email, and repository metadata to provide monitoring and scanning. See /privacy for the complete policy, including retention and data-deletion instructions." },
+      { t: "p", x: "Breaklytix collects your GitHub profile, email, and repository metadata to provide monitoring and scanning. See /privacy for the complete policy, including retention and data-deletion instructions." },
     ],
   },
   {
@@ -499,10 +499,10 @@ export const DOCS: DocArticle[] = [
     title: "Terms of Service",
     section: "Provider Monitoring",
     order: 25,
-    summary: "Your rights and obligations when using AutoFix.",
+    summary: "Your rights and obligations when using Breaklytix.",
     related: ["privacy-policy", "acceptable-use"],
     content: [
-      { t: "p", x: "Your use of AutoFix is governed by the Terms of Service at /terms and the Acceptable Use Policy at /acceptable-use. By using the product you agree to the current versions." },
+      { t: "p", x: "Your use of Breaklytix is governed by the Terms of Service at /terms and the Acceptable Use Policy at /acceptable-use. By using the product you agree to the current versions." },
     ],
   },
 
@@ -547,12 +547,12 @@ export const DOCS: DocArticle[] = [
     title: "FAQ",
     section: "Provider Monitoring",
     order: 28,
-    summary: "Common questions about AutoFix.",
+    summary: "Common questions about Breaklytix.",
     related: ["troubleshooting"],
     content: [
       { t: "ul", x: [
-        "Does AutoFix read my secrets? No — only public code access (public_repo) and metadata; it scans code structure, not credentials.",
-        "Does AutoFix auto-merge PRs? No. Auto-fix PRs are opt-in, human-reviewed, and never merged automatically.",
+        "Does Breaklytix read my secrets? No — only public code access (public_repo) and metadata; it scans code structure, not credentials.",
+        "Does Breaklytix auto-merge PRs? No. Auto-fix PRs are opt-in, human-reviewed, and never merged automatically.",
         "Can I monitor private repositories? Repository access follows the scopes you approved; the default is read-only public_repo access.",
         "How fast are alerts? Provider changelogs are fetched daily at 08:00 UTC and processed at 08:15 UTC; on-demand scans run immediately.",
         "What happens if I disconnect GitHub? Background scans pause until you reconnect; your data and history remain.",

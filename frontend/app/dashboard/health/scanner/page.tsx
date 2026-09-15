@@ -13,12 +13,12 @@ import {
 import { formatDate } from "../../../../components/ui";
 
 const STAGES = [
-  "Fetching repositoryâ€¦",
-  "Analyzing filesâ€¦",
-  "Detecting APIsâ€¦",
-  "Checking SDKs and dependenciesâ€¦",
-  "Checking reliabilityâ€¦",
-  "Generating health reportâ€¦",
+  "Fetching repository…",
+  "Analyzing files…",
+  "Detecting APIs…",
+  "Checking SDKs and dependencies…",
+  "Checking reliability…",
+  "Generating health report…",
 ];
 
 export default function ScannerPage() {
@@ -73,8 +73,8 @@ export default function ScannerPage() {
 
   return (
     <div>
-      <h1>Code Break Detection Â· Repository Scanner</h1>
-      <p className="subtitle">Scan a repository â€” detect API usage, SDK versions, and break risks{" "}
+      <h1>Code Break Detection · Repository Scanner</h1>
+      <p className="subtitle">Scan a repository — detect API usage, SDK versions, and break risks{" "}
         <Link href="/docs/repository-scanner" style={{ textDecoration: "none" }}>Learn more</Link></p>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
@@ -86,7 +86,7 @@ export default function ScannerPage() {
           ))}
         </select>
         <button className="btn btn-primary" onClick={runScan} disabled={scanning || !repoId}>
-          {scanning ? `Scanningâ€¦ ${STAGES[stage]}` : "Scan now"}
+          {scanning ? `Scanning… ${STAGES[stage]}` : "Scan now"}
         </button>
       </div>
 
@@ -153,11 +153,11 @@ export default function ScannerPage() {
                     {s.status}
                   </span>
                 </td>
-                <td data-label="Files">{s.stats?.files_scanned ?? "â€”"}</td>
-                <td data-label="Detections">{s.stats?.detections_found ?? s.stats?.findings_total ?? "â€”"}</td>
-                <td data-label="Created">{s.created_at ? formatDate(s.created_at as string) : "â€”"}</td>
-                <td data-label="Completed">{s.finished_at ? formatDate(s.finished_at as string) : "â€”"}</td>
-                <td data-label="Error" style={{ opacity: 0.6 }}>{s.error_message || "â€”"}</td>
+                <td data-label="Files">{s.stats?.files_scanned ?? "—"}</td>
+                <td data-label="Detections">{s.stats?.detections_found ?? s.stats?.findings_total ?? "—"}</td>
+                <td data-label="Created">{s.created_at ? formatDate(s.created_at as string) : "—"}</td>
+                <td data-label="Completed">{s.finished_at ? formatDate(s.finished_at as string) : "—"}</td>
+                <td data-label="Error" style={{ opacity: 0.6 }}>{s.error_message || "—"}</td>
               </tr>
             ))}
           </tbody>

@@ -138,11 +138,11 @@ Likely affected in your code:
 
 This is a heads-up only - no code was changed. Review and update manually.
 
-— {brand_name or "AutoFix API"}
+— {brand_name or "Breaklytix"}
 """
 
-    logo_html = f'<img src="{brand_logo}" alt="{brand_name or "AutoFix"}" style="height:32px;margin-bottom:12px;" />' if brand_logo else ""
-    sender = brand_name or "AutoFix API"
+    logo_html = f'<img src="{brand_logo}" alt="{brand_name or "Breaklytix"}" style="height:32px;margin-bottom:12px;" />' if brand_logo else ""
+    sender = brand_name or "Breaklytix"
 
     html = f"""\
 <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;">
@@ -169,9 +169,9 @@ This is a heads-up only - no code was changed. Review and update manually.
   </p>
   <p style="background:{confidence_bg};border-left:3px solid {confidence_color};padding:10px 12px;border-radius:4px;font-size:13px;color:#333;margin:0;">
     {confidence_message}<br/>
-    AutoFix API did not read or store your secret values and did not modify your code.
+    Breaklytix did not read or store your secret values and did not modify your code.
   </p>
-  <p style="color:#999;font-size:12px;margin-top:20px;">&mdash; {brand_name or "AutoFix API"}</p>
+  <p style="color:#999;font-size:12px;margin-top:20px;">&mdash; {brand_name or "Breaklytix"}</p>
 </div>"""
     return subject, html, text
 

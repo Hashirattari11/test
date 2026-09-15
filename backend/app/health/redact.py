@@ -13,19 +13,23 @@ import re
 _PATTERNS: list[tuple[str, str]] = [
     (r"sk_live_[A-Za-z0-9]{16,}", "sk_live_…REDACTED…"),
     (r"sk_test_[A-Za-z0-9]{16,}", "sk_test_…REDACTED…"),
-    (r"sk-[A-Za-z0-9_-]{20,}", "sk-…REDACTED…"),
+    (r"sk-[A-Za-z0-9_-]{14,}", "sk-…REDACTED…"),
     (r"AIza[0-9A-Za-z_-]{20,}", "AIza…REDACTED…"),
     (r"xox[baprs]-[0-9A-Za-z-]{10,}", "xox…REDACTED…"),
     (r"ghp_[0-9A-Za-z]{30,}", "ghp_…REDACTED…"),
-    (r"github_pat_[0-9A-Za-z_]{20,}", "github_pat_…REDACTED…"),
-    (r"AKIA[0-9A-Z]{16}", "AKIA…REDACTED…"),
+    (r"github_pat_[0-9A-Za-z_]{16,}", "github_pat_…REDACTED…"),
+    (r"AKIA[0-9A-Z_]{16,}", "AKIA…REDACTED…"),
     (r"Bearer\s+[A-Za-z0-9._-]{16,}", "Bearer …REDACTED…"),
     (r"Basic\s+[A-Za-z0-9+/=]{16,}", "Basic …REDACTED…"),
     (r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}", "JWT…REDACTED…"),
     (r"-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----…REDACTED…"),
     # Generic secret assignment: NAME=value / NAME: value  (env-var style)
     (r"\b([A-Z][A-Z0-9_]{2,}(?:_KEY|_SECRET|_TOKEN|_PASSWORD|_API_KEY))\s*[=:]\s*\S+", r"\1=…REDACTED…"),
+    # Secret-looking value on the right side of any assignment, e.g. key=STRIPE_TEST_KEY
+    (r"\b(\w[\w.-]*)\s*[=:]\s*([A-Z][A-Z0-9_]{2,}(?:_KEY|_SECRET|_TOKEN|_PASSWORD|_API_KEY))\b", r"\1=…REDACTED…"),
     (r"\b(api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|password)\b\s*[=:]\s*\S+", r"\1=…REDACTED…"),
+    # Long high-entropy tokens (24+ alnum/_- chars), e.g. trailing key fragments
+    (r"\b[A-Za-z0-9_-]{24,}\b", "…REDACTED…"),
 ]
 
 _COMPILED: list[tuple[re.Pattern, str]] = [

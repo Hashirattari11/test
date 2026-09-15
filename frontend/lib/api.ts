@@ -1,4 +1,4 @@
-// Typed client for the AutoFix FastAPI backend.
+// Typed client for the Breaklytix FastAPI backend.
 import { clearSession, ensureSession, getToken, User } from "./auth";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";

@@ -1,7 +1,7 @@
 "use client";
 
 // ---------------------------------------------------------------------------
-// AutoFix — Premium shared UI primitives (lightweight, zero dependencies).
+// Breaklytix — Premium shared UI primitives (lightweight, zero dependencies).
 // Consumed by dashboard, settings, admin, and health pages.
 // ---------------------------------------------------------------------------
 

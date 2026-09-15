@@ -26,7 +26,7 @@ def _patched() -> None:
     format. The supabase-py client (v2.x) only accepts the legacy JWT format and
     rejects anything else by raising "Invalid API key" from a strict regex in
     `SyncClient.__init__`:
-        re.match(r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$", key)
+        re.match(r"^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.?[A-Za-z0-9-_.+/=]*$", key)
 
     The `sb_secret_...` keys are valid PostgREST credentials (the REST API
     accepts them), so we relax the module's `re` to also accept that format. We

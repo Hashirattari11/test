@@ -277,7 +277,7 @@ export default function LandingPage() {
                 <span style={{ background: "linear-gradient(135deg, var(--accent), #8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Stripe changes their API</span>
               </h1>
               <p style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(255,255,255,0.65)", margin: "0 0 32px", maxWidth: 520 }}>
-                AutoFix detects which third-party APIs your repos use, monitors changelogs for breaking changes, and alerts you <strong style={{ color: "white" }}>before</strong> your code breaks.
+                Breaklytix detects which third-party APIs your repos use, monitors changelogs for breaking changes, and alerts you <strong style={{ color: "white" }}>before</strong> your code breaks.
               </p>
               <div className="lp-hero-cta" style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
                 <Link href="/dashboard" className="btn btn-primary btn-lg lp-glow-btn" style={{ fontSize: 16, padding: "16px 32px", background: "linear-gradient(135deg, var(--accent), #7c3aed)", border: "none", borderRadius: 12 }}>
@@ -382,7 +382,7 @@ const intent = await stripe.paymentIntents.create({
                 { num: 1, title: "Connect your repo", desc: "Sign in with GitHub and select a repository. We scan your codebase for third-party API usage." },
                 { num: 2, title: "We monitor changelogs", desc: "Our daily cron scrapes official changelogs. When a breaking change is published, we cross-reference it against your code." },
                 { num: 3, title: "Get alerted instantly", desc: "Receive an email with the exact change, affected file, and line number — fix it before users notice." },
-                { num: 4, title: "Auto-fix via PR", desc: "For high-confidence changes, AutoFix opens a GitHub PR with the fix applied. Review, merge, done.", future: true },
+                { num: 4, title: "Auto-fix via PR", desc: "For high-confidence changes, Breaklytix opens a GitHub PR with the fix applied. Review, merge, done.", future: true },
               ].map((s, i) => (
                 <div key={i} className={`lp-step-card ${s.future ? "future" : ""}`} ref={steps[i].ref} style={{ opacity: steps[i].visible ? 1 : 0, transform: steps[i].visible ? "translateY(0)" : "translateY(24px)", transition: `all 0.6s ease ${i * 0.15}s` }}>
                   <div className="lp-step-number">{s.num}</div>
@@ -509,7 +509,7 @@ const intent = await stripe.paymentIntents.create({
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; {new Date().getFullYear()} AutoFix API. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Breaklytix. All rights reserved.</p>
           </div>
         </div>
       </footer>

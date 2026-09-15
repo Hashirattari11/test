@@ -1,5 +1,5 @@
 /**
- * AutoFix Provider Registry — Phase A (Detection Only)
+ * Breaklytix Provider Registry — Phase A (Detection Only)
  *
  * Security rules:
  * - No secret VALUES stored, only environment variable NAMES as string labels

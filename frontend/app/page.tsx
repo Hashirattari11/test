@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: SITE_URL + "/" },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "AutoFix API — Never let a broken API catch you off guard",
+    title: "Breaklytix — Never let a broken API catch you off guard",
     description: SITE_DESCRIPTION,
     url: SITE_URL + "/",
     type: "website",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "AutoFix API",
+  name: "Breaklytix",
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Web",
   url: SITE_URL + "/",

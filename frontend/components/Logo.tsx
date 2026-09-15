@@ -1,4 +1,4 @@
-// AutoFix brand logo — rounded square with the brand gradient + bolt.
+// Breaklytix brand logo — rounded square with the brand gradient + bolt.
 // Replaces scattered inline "dot + text" logos.
 type LogoProps = {
   size?: number;
@@ -35,7 +35,7 @@ export function LogoMark({ size = 32, withWordmark = false, className }: LogoPro
       </span>
       {withWordmark && (
         <span style={{ fontWeight: 800, fontSize: Math.round(size * 0.55), letterSpacing: "-0.01em", color: "inherit" }}>
-          AutoFix API
+          Breaklytix
         </span>
       )}
     </span>

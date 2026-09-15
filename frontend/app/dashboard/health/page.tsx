@@ -67,12 +67,12 @@ export default function HealthPage() {
     setScanning(true);
     // Progressive sub-steps while the real scan pipeline runs server-side.
     const scanStages = [
-      "Fetching repositoryâ€¦",
-      "Analyzing filesâ€¦",
-      "Detecting APIsâ€¦",
-      "Checking SDKs / dependenciesâ€¦",
-      "Checking reliabilityâ€¦",
-      "Generating health reportâ€¦",
+      "Fetching repository…",
+      "Analyzing files…",
+      "Detecting APIs…",
+      "Checking SDKs / dependencies…",
+      "Checking reliability…",
+      "Generating health report…",
     ];
     let stage = 0;
     setScanMessage(scanStages[0]);
@@ -102,15 +102,15 @@ export default function HealthPage() {
       const raw = apiErr ? apiErr.message : String(e);
       let human = raw;
       if (!apiErr) {
-        human = "Network error while reaching the backend â€” please retry.";
+        human = "Network error while reaching the backend — please retry.";
       } else if (apiErr.status === 500) {
-        human = `Backend scanner error â€” please retry, and check the backend logs if it persists. (${raw})`;
+        human = `Backend scanner error — please retry, and check the backend logs if it persists. (${raw})`;
       } else if (apiErr.status === 502) {
         human = `Backend could not reach GitHub or a provider: ${raw}`;
       } else if (apiErr.status === 404) {
         human = "Repository not found or no longer accessible from this account.";
       } else if (apiErr.status === 401) {
-        human = "GitHub authorization has expired â€” please reconnect your GitHub account, then retry.";
+        human = "GitHub authorization has expired — please reconnect your GitHub account, then retry.";
       } else if (apiErr.status === 403) {
         human = `Access denied: ${raw}`;
       }
@@ -141,7 +141,7 @@ export default function HealthPage() {
             onChange={(e) => setSelectedRepo(e.target.value)}
             disabled={scanning}
           >
-            <option value="">Select a connected repositoryâ€¦</option>
+            <option value="">Select a connected repository…</option>
             {repos.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.full_name}
@@ -150,7 +150,7 @@ export default function HealthPage() {
             ))}
           </select>
           <button className="btn btn-primary" onClick={runScan} disabled={!selectedRepo || scanning}>
-            {scanning ? "Scanningâ€¦" : "Scan now"}
+            {scanning ? "Scanning…" : "Scan now"}
           </button>
           {repos.length === 0 && (
             <Link href="/dashboard/repos" className="btn btn-secondary">
@@ -161,21 +161,21 @@ export default function HealthPage() {
         {scanMessage && (
           <p className={scanMessage.startsWith("Scan failed") ? "usage-error" : "scan-message"}>{scanMessage}</p>
         )}
-        {scanning && <div className="loading-inline">This pulls real code, manifests, and provider status dataâ€¦</div>}
+        {scanning && <div className="loading-inline">This pulls real code, manifests, and provider status data…</div>}
       </section>
 
       {/* Real usage graph for the selected repo */}
       {selectedRepo && graph && graph.integrations.length > 0 && (
         <section>
-          <h2>Usage Graph â€” {graph.integrations.length} integration(s)</h2>
+          <h2>Usage Graph — {graph.integrations.length} integration(s)</h2>
           <div className="usage-graph-list">
             {graph.integrations.map((it) => (
               <div key={it.provider} className="graph-integration">
                 <div className="graph-header">
                   <span className="provider-name">{it.provider}</span>
                   <span className="graph-meta">
-                    {it.methods.length} method(s) Â· {it.files.length} file(s)
-                    {it.config_refs.length > 0 ? ` Â· ${it.config_refs.length} env ref(s)` : ""}
+                    {it.methods.length} method(s) · {it.files.length} file(s)
+                    {it.config_refs.length > 0 ? ` · ${it.config_refs.length} env ref(s)` : ""}
                   </span>
                 </div>
                 {it.methods.length > 0 && (
@@ -201,7 +201,7 @@ export default function HealthPage() {
                       <tr key={i}>
                         <td data-label="Method / Endpoint">{pt.method}</td>
                         <td data-label="File" className="mono">{pt.file}</td>
-                        <td data-label="Line">{pt.line ?? "â€”"}</td>
+                        <td data-label="Line">{pt.line ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -211,10 +211,10 @@ export default function HealthPage() {
           </div>
         </section>
       )}
-      {selectedRepo && !graph && !graphError && <p className="loading-inline">Loading usage graphâ€¦</p>}
+      {selectedRepo && !graph && !graphError && <p className="loading-inline">Loading usage graph…</p>}
       {graphError && <p className="usage-error">Usage graph unavailable: {graphError}</p>}
       {selectedRepo && graph && graph.integrations.length === 0 && (
-        <p className="empty-state">No API detections in this repo yet â€” run a scan above to generate the usage graph.</p>
+        <p className="empty-state">No API detections in this repo yet — run a scan above to generate the usage graph.</p>
       )}
 
       <div className="health-overview-grid">

@@ -359,12 +359,12 @@ def agency_test_email(request: Request, user_id: str = Depends(get_current_user_
         user_id=user_id,
         recipient=owner_email,
         alert_type="agency_test",
-        subject="AutoFix API — Agency test email",
+        subject="Breaklytix — Agency test email",
         html=(
-            "<p>This is a test email from your AutoFix API agency workspace.</p>"
+            "<p>This is a test email from your Breaklytix agency workspace.</p>"
             "<p>If you received this, your email pipeline is configured correctly.</p>"
         ),
-        text="This is a test email from your AutoFix API agency workspace. "
+        text="This is a test email from your Breaklytix agency workspace. "
              "If you received this, your email pipeline is configured correctly.",
     )
 

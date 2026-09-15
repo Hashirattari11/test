@@ -1,4 +1,4 @@
-// AutoFix theme engine — light / dark / system.
+// Breaklytix theme engine — light / dark / system.
 // A no-flash inline script in app/layout.tsx applies the stored preference
 // BEFORE React hydrates; these helpers keep state in sync at runtime.
 

@@ -49,7 +49,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <aside className="sidebar p-sidebar" role="navigation" aria-label="Admin navigation">
         <div className="sidebar-header">
           <Link href="/admin" className="brand">
-            <LogoMark size={26} withWordmark /> AutoFix Admin
+            <LogoMark size={26} withWordmark /> Breaklytix Admin
           </Link>
         </div>
         <nav className="sidebar-nav" aria-label="Admin navigation">
@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <header className="dashboard-header">
           <div className="dashboard-header-inner">
             <Link href="/admin" className="brand">
-              <LogoMark size={26} withWordmark /> AutoFix Admin
+              <LogoMark size={26} withWordmark /> Breaklytix Admin
             </Link>
             <div className="header-actions">
               <span className="header-user">{user?.github_login || user?.email}</span>

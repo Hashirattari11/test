@@ -19,7 +19,7 @@ const STATUS_COLOR: Record<string, string> = {
   rejected: "#6b7280",
 };
 
-export default function AutoFixPage() {
+export default function BreaklytixPage() {
   const [repos, setRepos] = useState<Repo[]>([]);
   const [fixes, setFixes] = useState<(Fix & { repo_name: string })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ export default function AutoFixPage() {
             <div key={f.id} style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                 <div>
-                  <span style={{ fontWeight: 700 }}>{f.rule_title || "AutoFix"}</span>
+                  <span style={{ fontWeight: 700 }}>{f.rule_title || "Breaklytix"}</span>
                   <span style={{ marginLeft: 8, opacity: 0.6 }}>{f.repo_name}</span>
                 </div>
                 <div>

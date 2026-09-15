@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     # ---- Email (Resend REST API) ------------------------------------------
     resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
     resend_from_email: str = Field(
-        default="AutoFix API <onboarding@resend.dev>", alias="RESEND_FROM_EMAIL"
+        default="Breaklytix <onboarding@resend.dev>", alias="RESEND_FROM_EMAIL"
     )
 
     # ---- Stripe Billing (Phase 3) ------------------------------------------

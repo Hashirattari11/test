@@ -196,7 +196,7 @@ function FixRow({
     <tr key={fix.id} style={{ borderBottom: "1px solid #eee" }}>
       <td data-label="Fix / Rule">
         <div>
-          <strong>{fix.rule_title || "AutoFix Rule"}</strong>
+          <strong>{fix.rule_title || "Breaklytix Rule"}</strong>
           {fix.rule_confidence && (
             <span
               className={`pill ${STATUS_COLORS[fix.rule_confidence as FixStatus] || "pill-gray"}`}

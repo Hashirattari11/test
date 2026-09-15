@@ -1,5 +1,5 @@
 /**
- * AutoFix Provider Registry — TypeScript Types
+ * Breaklytix Provider Registry — TypeScript Types
  *
  * Security rule: These types define the SHAPE of provider metadata only.
  * No secret values are ever stored, logged, or transmitted.

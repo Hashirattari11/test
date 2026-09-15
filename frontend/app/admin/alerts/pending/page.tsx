@@ -86,7 +86,7 @@ export default function AdminPendingAlertsPage() {
   if (alerts === null) {
     return (
       <main className="container page" style={{ textAlign: "center", paddingTop: 80 }}>
-        <Spinner /> Loadingâ€¦
+        <Spinner /> Loading…
       </main>
     );
   }
@@ -132,23 +132,23 @@ export default function AdminPendingAlertsPage() {
             <tbody>
               {alerts.map((a) => (
                 <tr key={a.id}>
-                  <td data-label="Provider">{a.provider || a.api_name || "â€”"}</td>
+                  <td data-label="Provider">{a.provider || a.api_name || "—"}</td>
                   <td data-label="Repo / Customer">
-                    <div>{a.repo_name || "â€”"}</div>
+                    <div>{a.repo_name || "—"}</div>
                     <div className="muted">{a.customer_email || "no email"}</div>
                   </td>
                   <td data-label="Severity">
                     <SeverityBadge severity={a.severity} />
                   </td>
-                  <td data-label="Confidence">{a.confidence || "â€”"}</td>
+                  <td data-label="Confidence">{a.confidence || "—"}</td>
                   <td data-label="Email Preview">
                     <div style={{ maxWidth: 320 }}>
                       {a.subject && <div style={{ fontWeight: 600 }}>{a.subject}</div>}
                       {a.preview && <div className="muted" style={{ fontSize: 12 }}>{a.preview}</div>}
-                      {a.evidence && <div className="muted" style={{ fontSize: 12 }}>ðŸ“Ž {a.evidence}</div>}
+                      {a.evidence && <div className="muted" style={{ fontSize: 12 }}>📎 {a.evidence}</div>}
                     </div>
                   </td>
-                  <td data-label="Created" className="muted">{a.created_at ? formatDate(a.created_at) : "â€”"}</td>
+                  <td data-label="Created" className="muted">{a.created_at ? formatDate(a.created_at) : "—"}</td>
                   <td data-label="Actions" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                     <button
                       className="btn btn-primary btn-sm"

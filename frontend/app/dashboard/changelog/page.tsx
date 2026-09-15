@@ -170,7 +170,7 @@ export default function ChangelogPage() {
         </div>
 
         {notices === null ? (
-          <div style={{ padding: 20 }}><Spinner /> Loadingâ€¦</div>
+          <div style={{ padding: 20 }}><Spinner /> Loading…</div>
         ) : filtered.length === 0 ? (
           <div className="empty" style={{ marginTop: 16 }}>
             {notices.length === 0
@@ -202,7 +202,7 @@ export default function ChangelogPage() {
                     <div className="small" style={{ marginTop: 4 }}>{n.title}</div>
                     {n.source_url && (
                       <a className="small" href={n.source_url} target="_blank" rel="noreferrer">
-                        Official source â†’
+                        Official source →
                       </a>
                     )}
                   </td>

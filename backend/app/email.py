@@ -22,7 +22,7 @@ def send_invite_email(
     user_id: str | None = None,
 ) -> dict:
     """Send an agency invitation email with authorization link."""
-    subject = f"{agency_name} invited you to AutoFix API"
+    subject = f"{agency_name} invited you to Breaklytix"
 
     html = f"""
     <!DOCTYPE html>
@@ -35,7 +35,7 @@ def send_invite_email(
         <div style="max-width: 520px; margin: 40px auto; background: white; border-radius: 12px; border: 1px solid #e6e6ef; overflow: hidden;">
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #635bff, #8b5cf6); padding: 32px; text-align: center;">
-                <h1 style="color: white; font-size: 24px; margin: 0;">AutoFix API</h1>
+                <h1 style="color: white; font-size: 24px; margin: 0;">Breaklytix</h1>
                 <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0;">Repository Access Authorization</p>
             </div>
 
@@ -44,7 +44,7 @@ def send_invite_email(
                 <p style="font-size: 16px; color: #1a1a2e; margin: 0 0 16px;">Hi {client_name},</p>
 
                 <p style="font-size: 15px; color: #4b5563; line-height: 1.6; margin: 0 0 20px;">
-                    <strong>{agency_name}</strong> wants to connect your GitHub repository to AutoFix API
+                    <strong>{agency_name}</strong> wants to connect your GitHub repository to Breaklytix
                     to monitor it for breaking API changes from providers like Stripe, Shopify, Twilio, and SendGrid.
                 </p>
 
@@ -64,7 +64,7 @@ def send_invite_email(
                 <div style="background: #f7f7fb; border-radius: 8px; padding: 16px; margin: 0 0 20px;">
                     <p style="font-size: 13px; color: #6b7280; margin: 0 0 8px;"><strong>What happens next?</strong></p>
                     <ul style="font-size: 13px; color: #6b7280; margin: 0; padding-left: 20px;">
-                        <li style="margin-bottom: 4px;">You'll authorize AutoFix to read your repository</li>
+                        <li style="margin-bottom: 4px;">You'll authorize Breaklytix to read your repository</li>
                         <li style="margin-bottom: 4px;">You'll select which repo(s) to share</li>
                         <li style="margin-bottom: 4px;">{agency_name} will monitor for API breaking changes</li>
                         <li>You can revoke access anytime from your GitHub settings</li>
@@ -79,7 +79,7 @@ def send_invite_email(
             <!-- Footer -->
             <div style="padding: 16px 32px; border-top: 1px solid #e6e6ef; text-align: center;">
                 <p style="font-size: 12px; color: #9ca3af; margin: 0;">
-                    AutoFix API — Detect. Alert. Fix. Automatically.
+                    Breaklytix — Detect. Alert. Fix. Automatically.
                 </p>
             </div>
         </div>
@@ -88,25 +88,25 @@ def send_invite_email(
     """
 
     text = f"""
-    {agency_name} invited you to AutoFix API
+    {agency_name} invited you to Breaklytix
 
     Hi {client_name},
 
-    {agency_name} wants to connect your GitHub repository to AutoFix API
+    {agency_name} wants to connect your GitHub repository to Breaklytix
     to monitor it for breaking API changes.
 
     Click the link below to authorize access:
     {auth_link}
 
     What happens next?
-    - You'll authorize AutoFix to read your repository
+    - You'll authorize Breaklytix to read your repository
     - You'll select which repo(s) to share
     - {agency_name} will monitor for API breaking changes
     - You can revoke access anytime from your GitHub settings
 
     This link expires in 7 days. If you didn't expect this email, you can safely ignore it.
 
-    AutoFix API — Detect. Alert. Fix. Automatically.
+    Breaklytix — Detect. Alert. Fix. Automatically.
     """
 
     return send_transactional_email(
@@ -174,7 +174,7 @@ def send_detection_confirmation_email(
           </p>
         </div>
         <div style="padding:16px 32px;border-top:1px solid #e6e6ef;text-align:center;">
-          <p style="font-size:12px;color:#9ca3af;margin:0;">AutoFix API \u2014 Detect. Alert. Fix. Automatically.</p>
+          <p style="font-size:12px;color:#9ca3af;margin:0;">Breaklytix \u2014 Detect. Alert. Fix. Automatically.</p>
         </div>
       </div>
     </body>
@@ -191,7 +191,7 @@ We'll monitor these APIs' changelogs and alert you if a breaking change affects 
 
 Manage this repo from your dashboard: {_dash_url()}
 
-AutoFix API \u2014 Detect. Alert. Fix. Automatically.
+Breaklytix \u2014 Detect. Alert. Fix. Automatically.
 """
 
     return send_transactional_email(
@@ -206,7 +206,7 @@ AutoFix API \u2014 Detect. Alert. Fix. Automatically.
 
 def send_welcome_email(to_email: str, user_name: str, user_id: str | None = None) -> dict:
     """Send a welcome email after GitHub OAuth signup."""
-    subject = "Welcome to AutoFix API!"
+    subject = "Welcome to Breaklytix!"
 
     html = f"""
     <!DOCTYPE html>
@@ -218,7 +218,7 @@ def send_welcome_email(to_email: str, user_name: str, user_id: str | None = None
     <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f7f7fb;">
         <div style="max-width: 520px; margin: 40px auto; background: white; border-radius: 12px; border: 1px solid #e6e6ef; overflow: hidden;">
             <div style="background: linear-gradient(135deg, #635bff, #8b5cf6); padding: 32px; text-align: center;">
-                <h1 style="color: white; font-size: 24px; margin: 0;">Welcome to AutoFix!</h1>
+                <h1 style="color: white; font-size: 24px; margin: 0;">Welcome to Breaklytix!</h1>
             </div>
             <div style="padding: 32px;">
                 <p style="font-size: 16px; color: #1a1a2e; margin: 0 0 16px;">Hi {user_name},</p>
@@ -238,7 +238,7 @@ def send_welcome_email(to_email: str, user_name: str, user_id: str | None = None
     </html>
     """
 
-    text = f"Hi {user_name},\n\nYour AutoFix account is ready. Go to {_dash_url()} to get started."
+    text = f"Hi {user_name},\n\nYour Breaklytix account is ready. Go to {_dash_url()} to get started."
 
     return send_transactional_email(
         user_id=user_id,

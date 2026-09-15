@@ -58,7 +58,7 @@ export default function LoginClient() {
           By continuing you agree to the{" "}
           <Link href="/terms" className="lp-inline-link">Terms</Link> and{" "}
           <Link href="/privacy" className="lp-inline-link">Privacy Policy</Link>.{" "}
-          AutoFix requests read access to the repos you connect so it can detect which
+          Breaklytix requests read access to the repos you connect so it can detect which
           third-party APIs your code uses.
         </p>
       </div>

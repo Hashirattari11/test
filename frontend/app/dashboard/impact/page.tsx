@@ -81,7 +81,7 @@ export default function ImpactPage() {
   if (loading) {
     return (
       <div className="container" style={{ padding: "40px 0" }}>
-        <Spinner /> Loading impact dataâ€¦
+        <Spinner /> Loading impact data…
       </div>
     );
   }
@@ -96,8 +96,8 @@ export default function ImpactPage() {
 
       {/* Summary cards */}
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, margin: "24px 0" }}>
-        <SummaryCard label="Total Analyses" value={summary ? String(summary.total_analyses) : "â€”"} />
-        <SummaryCard label="Affected Repos" value={summary ? String(summary.affected_repos) : "â€”"} />
+        <SummaryCard label="Total Analyses" value={summary ? String(summary.total_analyses) : "—"} />
+        <SummaryCard label="Affected Repos" value={summary ? String(summary.affected_repos) : "—"} />
         {Object.entries(summary?.by_severity || {}).map(([sev, count]) => (
           <SummaryCard
             key={sev}
@@ -168,7 +168,7 @@ export default function ImpactPage() {
             onChange={(e) => setSelectedRepo(e.target.value)}
             style={{ minWidth: 200 }}
           >
-            <option value="">Select repositoryâ€¦</option>
+            <option value="">Select repository…</option>
             {repos.map((r) => (
               <option key={r.id} value={r.id}>{r.full_name}</option>
             ))}
@@ -185,7 +185,7 @@ export default function ImpactPage() {
             onClick={runDrill}
             disabled={!selectedRepo || !drillProvider.trim() || drillRunning}
           >
-            {drillRunning ? "Running drillâ€¦" : "Run Fire Drill"}
+            {drillRunning ? "Running drill…" : "Run Fire Drill"}
           </button>
         </div>
 
@@ -229,7 +229,7 @@ export default function ImpactPage() {
             </p>
           </div>
           {analysesLoading ? (
-            <div style={{ padding: 20 }}><Spinner /> Loadingâ€¦</div>
+            <div style={{ padding: 20 }}><Spinner /> Loading…</div>
           ) : analyses.length === 0 ? (
             <div className="empty" style={{ padding: 24 }}>No analyses for this repo yet.</div>
           ) : (

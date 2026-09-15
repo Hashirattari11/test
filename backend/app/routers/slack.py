@@ -246,7 +246,7 @@ async def _approve_fix_via_slack(user_id: str, repo_id: str, fix_id: str) -> Non
     if conn:
         try:
             from ..slack_integration import post_fix_to_slack
-            rule_title = (fix.get("fix_rules") or {}).get("title") or "AutoFix"
+            rule_title = (fix.get("fix_rules") or {}).get("title") or "Breaklytix"
             post_fix_to_slack(
                 conn,
                 repo_name=repo["full_name"],

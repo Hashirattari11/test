@@ -71,7 +71,7 @@ export default function BillingPage() {
       <>
         <Nav />
         <main className="container page" style={{ textAlign: "center", paddingTop: 80 }}>
-          <Spinner /> Loading billingâ€¦
+          <Spinner /> Loading billing…
         </main>
       </>
     );
@@ -110,7 +110,7 @@ export default function BillingPage() {
             <div>
               <div className="muted small">APIs Monitored</div>
               <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4 }}>
-                {usage} / {isUnlimited ? "âˆž" : limit}
+                {usage} / {isUnlimited ? "∞" : limit}
               </div>
               <div style={{ marginTop: 8, height: 8, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
                 <div
@@ -129,7 +129,7 @@ export default function BillingPage() {
             <div>
               <div className="muted small">Billing Period</div>
               <div style={{ fontSize: 16, fontWeight: 500, marginTop: 4 }}>
-                {status?.current_period_end ? formatDate(status.current_period_end) : isTrial ? "Trial period" : "â€”"}
+                {status?.current_period_end ? formatDate(status.current_period_end) : isTrial ? "Trial period" : "—"}
               </div>
               {status?.cancel_at_period_end && (
                 <div className="pill pill-amber" style={{ marginTop: 8, fontSize: 11 }}>
@@ -150,13 +150,13 @@ export default function BillingPage() {
                   {isTrial ? "Select a Plan" : "Subscribe"}
                 </Link>
                 <button className="btn btn-secondary" onClick={handleManageSubscription} disabled={!isActive}>
-                  {portalLoading ? <><Spinner /> Openingâ€¦</> : "Manage in Stripe Portal"}
+                  {portalLoading ? <><Spinner /> Opening…</> : "Manage in Stripe Portal"}
                 </button>
               </>
             ) : (
               <>
                 <button className="btn btn-secondary" onClick={handleManageSubscription} disabled={portalLoading}>
-                  {portalLoading ? <><Spinner /> Openingâ€¦</> : "Manage in Stripe Portal"}
+                  {portalLoading ? <><Spinner /> Opening…</> : "Manage in Stripe Portal"}
                 </button>
                 <Link className="btn btn-secondary" href="/pricing">
                   Change Plan
@@ -215,7 +215,7 @@ export default function BillingPage() {
             <tbody>
               <tr>
                 <td data-label="Metric">Connected Repositories</td>
-                <td data-label="Value">â€” {/* Would need to fetch from /repos */}</td>
+                <td data-label="Value">— {/* Would need to fetch from /repos */}</td>
               </tr>
               <tr>
                 <td data-label="Metric">APIs Monitored (this period)</td>

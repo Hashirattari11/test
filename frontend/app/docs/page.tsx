@@ -4,7 +4,7 @@ import { LogoMark } from "@/components/Logo";
 import { DocsSearch } from "@/components/DocsSearch";
 
 export const metadata: Metadata = {
-  title: "Documentation | AutoFix API",
+  title: "Documentation | Breaklytix",
   description: "Guides for monitoring provider APIs, detecting code breaks, and using the Impact Engine.",
   robots: { index: true, follow: true },
   alternates: { canonical: `https://frontend-eight-phi-60.vercel.app/docs` },
@@ -19,7 +19,7 @@ export default function DocsPage() {
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
             <LogoMark size={44} />
           </div>
-          <h1 className="h1" style={{ marginBottom: 12 }}>AutoFix Documentation</h1>
+          <h1 className="h1" style={{ marginBottom: 12 }}>Breaklytix Documentation</h1>
           <p className="p" style={{ maxWidth: 620, margin: "0 auto", opacity: 0.75 }}>
             Everything about monitoring the APIs you depend on, detecting code breaks, and
             acting before provider changes break your product.
@@ -48,7 +48,7 @@ export default function DocsPage() {
         ))}
 
         <p className="p" style={{ textAlign: "center", opacity: 0.5, fontSize: 13, marginTop: 40 }}>
-          {DOCS.length} articles covering every feature of AutoFix.
+          {DOCS.length} articles covering every feature of Breaklytix.
         </p>
       </main>
     </div>

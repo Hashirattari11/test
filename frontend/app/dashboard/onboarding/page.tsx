@@ -119,7 +119,7 @@ export default function OnboardingPage() {
           <div>
             <h1 style={{ marginBottom: 4 }}>Getting Started</h1>
             <p className="muted" style={{ margin: 0 }}>
-              Complete these steps to get the most out of AutoFix
+              Complete these steps to get the most out of Breaklytix
             </p>
           </div>
           <div style={{ textAlign: "right" }}>
@@ -184,7 +184,7 @@ export default function OnboardingPage() {
           <div className="card" style={{ marginTop: 24, padding: 24, textAlign: "center", background: "#f0fdf4", borderColor: "#86efac" }}>
             <h2 style={{ marginBottom: 8, color: "#166534" }}>🎉 All set!</h2>
             <p className="muted" style={{ margin: 0 }}>
-              You&apos;re fully onboarded. AutoFix is now monitoring your repositories for breaking API changes.
+              You&apos;re fully onboarded. Breaklytix is now monitoring your repositories for breaking API changes.
             </p>
           </div>
         )}

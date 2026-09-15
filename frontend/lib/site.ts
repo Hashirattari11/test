@@ -1,6 +1,6 @@
 // Central site config — single source of truth for SEO metadata.
 export const SITE_URL = "https://frontend-eight-phi-60.vercel.app";
-export const SITE_NAME = "AutoFix API";
+export const SITE_NAME = "Breaklytix";
 export const SITE_DESCRIPTION =
   "Detect the third-party APIs your repos use and get alerted the moment a provider ships a breaking change.";
 
@@ -12,5 +12,5 @@ export const SUPPORT_EMAIL =
 // Legal operator placeholder — replace with the registered company name/address
 // before a commercial launch (see NEXT_PUBLIC_LEGAL_ENTITY / _ADDRESS).
 export const LEGAL_ENTITY =
-  process.env.NEXT_PUBLIC_LEGAL_ENTITY || "AutoFix API";
+  process.env.NEXT_PUBLIC_LEGAL_ENTITY || "Breaklytix";
 export const LEGAL_ADDRESS = process.env.NEXT_PUBLIC_LEGAL_ADDRESS || "";

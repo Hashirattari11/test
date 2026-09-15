@@ -45,7 +45,7 @@ class _FakeDB:
 def _cfg_ok(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
     monkeypatch.setattr(
-        email_service.settings, "resend_from_email", "AutoFix <no-reply@autofix.dev>"
+        email_service.settings, "resend_from_email", "Breaklytix <no-reply@autofix.dev>"
     )
 
 
@@ -90,7 +90,7 @@ def test_transactional_sandbox_warning(monkeypatch):
     monkeypatch.setattr(email_service.settings, "resend_api_key", "re_abc")
     monkeypatch.setattr(
         email_service.settings, "resend_from_email",
-        "AutoFix API <onboarding@resend.dev>",  # sandbox sender
+        "Breaklytix <onboarding@resend.dev>",  # sandbox sender
     )
     monkeypatch.setattr(email_service, "_insert_delivery", lambda **kw: None)
     monkeypatch.setattr(email_service, "send_email", lambda *a, **k: (True, "msg_txn_2"))

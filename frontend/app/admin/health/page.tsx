@@ -28,7 +28,7 @@ export default function AdminHealthPage() {
   if (rows === null) {
     return (
       <main className="container page" style={{ textAlign: "center", paddingTop: 80 }}>
-        <Spinner /> Loadingâ€¦
+        <Spinner /> Loading…
       </main>
     );
   }
@@ -73,9 +73,9 @@ export default function AdminHealthPage() {
                       {r.status}
                     </span>
                   </td>
-                  <td data-label="Duration (ms)">{r.duration_ms ?? "â€”"}</td>
-                  <td data-label="Error" className="muted">{r.error_message || "â€”"}</td>
-                  <td data-label="Ran At" className="muted">{r.ran_at ? formatDate(r.ran_at) : "â€”"}</td>
+                  <td data-label="Duration (ms)">{r.duration_ms ?? "—"}</td>
+                  <td data-label="Error" className="muted">{r.error_message || "—"}</td>
+                  <td data-label="Ran At" className="muted">{r.ran_at ? formatDate(r.ran_at) : "—"}</td>
                 </tr>
               ))}
             </tbody>

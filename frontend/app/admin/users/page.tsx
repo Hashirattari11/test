@@ -28,7 +28,7 @@ export default function AdminUsersPage() {
   if (users === null) {
     return (
       <main className="container page" style={{ textAlign: "center", paddingTop: 80 }}>
-        <Spinner /> Loadingâ€¦
+        <Spinner /> Loading…
       </main>
     );
   }
@@ -66,7 +66,7 @@ export default function AdminUsersPage() {
               {users.map((u) => (
                 <tr key={u.id}>
                   <td data-label="Email">{u.email}</td>
-                  <td data-label="GitHub">{u.github_login || "â€”"}</td>
+                  <td data-label="GitHub">{u.github_login || "—"}</td>
                   <td data-label="Plan">
                     <span className="badge badge-neutral">{u.plan || "free"}</span>
                   </td>
@@ -79,7 +79,7 @@ export default function AdminUsersPage() {
                       <span className="badge badge-neutral">customer</span>
                     )}
                   </td>
-                  <td data-label="Joined" className="muted">{u.created_at ? formatDate(u.created_at) : "â€”"}</td>
+                  <td data-label="Joined" className="muted">{u.created_at ? formatDate(u.created_at) : "—"}</td>
                 </tr>
               ))}
             </tbody>

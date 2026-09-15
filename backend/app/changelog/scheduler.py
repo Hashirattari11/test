@@ -352,10 +352,10 @@ def send_daily_status_email(repo_id: str, stats: dict, user_email: str, repo_nam
         
         # Build email content
         if has_issues:
-            subject = f"AutoFix Alert: Issues found for {repo_name}"
+            subject = f"Breaklytix Alert: Issues found for {repo_name}"
             status_text = "issues were detected"
         else:
-            subject = f"AutoFix Daily Status: {repo_name} — All Clear"
+            subject = f"Breaklytix Daily Status: {repo_name} — All Clear"
             status_text = "no issues found"
         
         # Build HTML body
@@ -595,7 +595,7 @@ def _send_impact_alert(repo_id: str, analysis, repo_name: str):
         
         # Build email
         severity_text = "BREAKING" if analysis.severity == "breaking" else "HIGH RISK"
-        subject = f"AutoFix Impact Alert: {severity_text} — {repo_name}"
+        subject = f"Breaklytix Impact Alert: {severity_text} — {repo_name}"
         
         affected_files = analysis.affected_files[:5]  # Top 5 files
         files_text = "\n".join([

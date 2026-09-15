@@ -88,16 +88,16 @@ def send_test_email(user_id: str = Depends(get_current_user_id)) -> TestEmailRes
     if not to_email:
         raise HTTPException(status_code=400, detail="No email address on file for this user")
 
-    subject = "AutoFix API — test email"
+    subject = "Breaklytix — test email"
     html = (
         '<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;'
         'max-width:560px;margin:0 auto;color:#1a1a2e;">'
-        "<h2 style=\"margin:0 0 8px;\">&#9989; AutoFix API test email</h2>"
+        "<h2 style=\"margin:0 0 8px;\">&#9989; Breaklytix test email</h2>"
         "<p style=\"color:#555;\">This is a test message to verify your email "
         "alert delivery. If you received this, the pipeline works.</p>"
         "</div>"
     )
-    text = "AutoFix API test email — if you received this, the pipeline works."
+    text = "Breaklytix test email — if you received this, the pipeline works."
 
     result = send_alert_email(
         user_id=user_id,

@@ -1,4 +1,4 @@
-"""Stripe Billing integration for AutoFix SaaS subscriptions.
+"""Stripe Billing integration for Breaklytix SaaS subscriptions.
 
 This module handles:
 - Creating Stripe Checkout sessions for plan upgrades

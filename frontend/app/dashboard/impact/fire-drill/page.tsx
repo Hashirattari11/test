@@ -62,7 +62,7 @@ export default function FireDrillPage() {
   if (loading) {
     return (
       <div className="container" style={{ padding: "40px 0" }}>
-        <Spinner /> Loadingâ€¦
+        <Spinner /> Loading…
       </div>
     );
   }
@@ -70,7 +70,7 @@ export default function FireDrillPage() {
   return (
     <div>
       <Link href="/dashboard/impact" className="small muted" style={{ textDecoration: "none" }}>
-        â† Back to Impact Engine
+        ← Back to Impact Engine
       </Link>
       <h1 style={{ margin: "8px 0 4px" }}>API Fire Drill</h1>
       <p className="muted" style={{ marginTop: 0 }}>
@@ -88,7 +88,7 @@ export default function FireDrillPage() {
             onChange={(e) => setSelectedRepo(e.target.value)}
             style={{ minWidth: 220 }}
           >
-            <option value="">Select repositoryâ€¦</option>
+            <option value="">Select repository…</option>
             {repos.map((r) => (
               <option key={r.id} value={r.id}>{r.full_name}</option>
             ))}
@@ -105,7 +105,7 @@ export default function FireDrillPage() {
             onClick={runDrill}
             disabled={!selectedRepo || !provider.trim() || running}
           >
-            {running ? "Running drillâ€¦" : "Run Fire Drill"}
+            {running ? "Running drill…" : "Run Fire Drill"}
           </button>
         </div>
         <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -141,7 +141,7 @@ export default function FireDrillPage() {
               </span>
             </div>
             <p className="muted small" style={{ margin: "8px 0 0" }}>
-              Provider: <strong>{result.provider}</strong> Â· Change: {result.change_type.replace(/_/g, " ")}
+              Provider: <strong>{result.provider}</strong> · Change: {result.change_type.replace(/_/g, " ")}
             </p>
 
             {result.impact_reason && (
@@ -159,7 +159,7 @@ export default function FireDrillPage() {
                     <li key={i} className="small" style={{ marginBottom: 4 }}>
                       <code>{f.file_path}</code>
                       {f.line_number ? `:${f.line_number}` : ""}
-                      {f.reason ? <span className="muted"> â€” {f.reason}</span> : null}
+                      {f.reason ? <span className="muted"> — {f.reason}</span> : null}
                     </li>
                   ))}
                 </ul>
@@ -172,16 +172,16 @@ export default function FireDrillPage() {
               <span className="small muted">
                 <strong>Verification:</strong>{" "}
                 {result.verification_status === "verified"
-                  ? "VERIFIED â€” fix passed verification checks."
+                  ? "VERIFIED — fix passed verification checks."
                   : result.verification_status === "static_analysis"
-                  ? "STATIC ANALYSIS â€” identified through static analysis only."
+                  ? "STATIC ANALYSIS — identified through static analysis only."
                   : result.verification_status === "verification_failed"
                   ? "VERIFICATION FAILED"
                   : "NOT VERIFIED"}
               </span>
               {result.source_url && (
                 <span className="small muted" style={{ display: "block", marginTop: 6 }}>
-                  Source: <a href={result.source_url} target="_blank" rel="noreferrer">{result.source_url.slice(0, 60)}â€¦</a>
+                  Source: <a href={result.source_url} target="_blank" rel="noreferrer">{result.source_url.slice(0, 60)}…</a>
                 </span>
               )}
             </div>

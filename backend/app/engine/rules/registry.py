@@ -232,7 +232,7 @@ RULES: list[BreakingRule] = [
         change_type="endpoint_changed",
         patterns=[r"\baxios\.(get|post|put|patch|delete)\s*\(", r"\bfetch\s*\(\s*['\"](?:https?://)?[^'\"]*(api|graphql)"],
         confidence=0.6,
-        recommended_fix="Use the provider's official SDK so AutoFix-style monitors and migrations apply cleanly.",
+        recommended_fix="Use the provider's official SDK so Breaklytix-style monitors and migrations apply cleanly.",
         source_url="https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api",
     ),
 ]

@@ -1,50 +1,38 @@
 # Work Log
 
 ## Active Sessions
-- [x] ses_1 (Worker): `backend/app/db.py` - fixed Supabase `sb_secret_` key validation - done
-- [x] ses_2 (Worker): Restart backend + frontend servers - done
-- [x] ses_P1 (Commander): Phase 1 "Simulate Breaking Change" full implementation - done
+- [ ] ses_10 (Commander): live 44-provider fetch against production DB (job_0a3ff079) - running
+- [x] ses_9 (Worker): M7 tests written + passing (24 new; 168 total backend; tsc+build 0)
+- [x] ses_8 (Worker): M6 frontend pages (list, detail, monitoring matrix, nav)
+- [x] ses_7 (Worker): M4/M5 alerts gating + subject + API routes + health + SSRF
+- [x] ses_6 (Worker): M1/M2/M3 backend registry, adapters, scheduler, migration
 
 ## File Status
-| File | Action | Status | Session | Unit Test | Timestamp | Issue |
-|------|--------|--------|---------|-----------|-----------|-------|
-| backend/app/db.py | MODIFY | done | ses_1 | pass | 2026-08-29T14:45:00 | - |
-| .opencode/todo.md | CREATE | done | ses_1 | - | 2026-08-29T14:47:00 | - |
-| backend/app/mocks/__init__.py | CREATE | done | ses_P1 | pass | 2026-09-03T01:04:00 | - |
-| backend/app/mocks/mock_changelog_event.py | CREATE | done | ses_P1 | pass | 2026-09-03T01:04:00 | - |
-| backend/app/schemas.py | MODIFY | done | ses_P1 | pass | 2026-09-03T01:05:00 | - |
-| backend/app/routers/repos.py | MODIFY | done | ses_P1 | pass | 2026-09-03T01:10:00 | - |
-| frontend/lib/api.ts | MODIFY | done | ses_P1 | pass | 2026-09-03T01:11:00 | - |
-| frontend/app/dashboard/repos/[id]/page.tsx | MODIFY | done | ses_P1 | pass | 2026-09-03T01:12:00 | - |
+| File | Action | Status | Session | Unit Test | Issue |
+|------|--------|--------|---------|-----------|-------|
+| backend/app/changelog/sources.py | CREATE/MODIFY | done | ses_6 | pass | stripe→HTML_STRICT, paypal URL fixed |
+| backend/app/changelog/base.py | REWRITE | done | ses_6 | pass | SSRF guard added ses_7 |
+| backend/app/changelog/classify.py | CREATE | done | ses_6 | pass | set[:4] bug fixed ses_9 |
+| backend/app/changelog/fingerprint.py | CREATE | done | ses_6 | pass | - |
+| backend/app/changelog/adapters.py | CREATE | done | ses_6 | pass | - |
+| backend/app/changelog/parsers/__init__.py | REWRITE | done | ses_6 | pass | 12 old parsers deleted |
+| backend/app/changelog/scheduler.py | REWRITE | done | ses_6 | pass | 44 providers, dedup, matrix |
+| backend/app/changelog/router.py | MODIFY | done | ses_7 | pass | events/monitoring/review endpoints |
+| backend/app/alerts.py | MODIFY | done | ses_7 | pass | gating + subject |
+| backend/app/config.py | MODIFY | done | ses_6 | pass | 44-provider sources |
+| backend/app/impact/analyzer.py | MODIFY | done | ses_7 | pass | spec phrasing |
+| backend/tests/test_changelog_monitoring.py | CREATE | done | ses_9 | pass | 24 tests |
+| backend/tests/test_impact.py | MODIFY | done | ses_9 | pass | spec phrasing assertions |
+| frontend/lib/api.ts | MODIFY | done | ses_8 | pass | new fns + type re-exports |
+| frontend/lib/providers/types.ts | MODIFY | done | ses_8 | pass | enums + event/matrix types |
+| frontend/app/dashboard/changelog/page.tsx | REWRITE | done | ses_8 | pass | 44-provider filter |
+| frontend/app/dashboard/changelog/[id]/page.tsx | REWRITE | done | ses_8 | pass | evidence + review/dismiss |
+| frontend/app/dashboard/providers/page.tsx | CREATE | done | ses_8 | pass | monitoring matrix |
+| frontend/app/dashboard/layout.tsx | MODIFY | done | ses_8 | pass | nav link |
+| frontend/app/dashboard/impact/page.tsx | MODIFY | done | ses_8 | pass | phrasing |
+| DB migration real_provider_monitoring_44 | APPLY | done | ses_6 | - | columns + matrix table |
+| DB cleanup+backfill | APPLY | done | ses_6 | - | 491→363 rows; 44 matrix rows |
 
 ## Pending Integration
-- db/migration_alerts_test_alerts.sql still to run in Supabase SQL editor (changelog_event_id nullable + is_test/provider/status columns)
-- Deploy backend + frontend to Vercel, then end-to-end test
-
-# Work Log (2026-09-04) - ADMIN FEATURE COMPLETE
-## File Status
-| File | Action | Status | Test | 
-|------|--------|--------|------|
-| backend/app/deps.py | MODIFY (require_admin) | done | pytest 20 pass |
-| backend/app/schemas.py | MODIFY (UserOut is_admin/is_agency) | done | pytest pass |
-| backend/app/routers/auth.py | MODIFY (UserOut ctors) | done | pytest pass |
-| backend/app/changelog/admin.py | MODIFY (is_admin reads DB) | done | pytest pass |
-| backend/app/alerts.py | MODIFY (status/is_test stamp) | done | pytest pass |
-| backend/app/routers/admin.py | CREATE | done | pytest pass |
-| backend/app/main.py | MODIFY (register admin_router) | done | pytest pass |
-| backend/tests/test_admin.py | CREATE (7 tests) | done | 20 passed |
-| frontend/lib/auth.ts | MODIFY (User is_admin/is_agency) | done | tsc 0 |
-| frontend/lib/api.ts | MODIFY (export request) | done | tsc 0 |
-| frontend/lib/admin.ts | CREATE | done | tsc 0 |
-| frontend/app/admin/layout.tsx | CREATE | done | tsc 0 |
-| frontend/app/admin/page.tsx | CREATE | done | tsc 0 |
-| frontend/app/admin/alerts/pending/page.tsx | CREATE | done | tsc 0 |
-| frontend/app/admin/health/page.tsx | CREATE | done | tsc 0 |
-| frontend/app/admin/users/page.tsx | CREATE | done | tsc 0 |
-| frontend/app/dashboard/layout.tsx | MODIFY (conditional Admin nav + AdminIcon) | done | tsc 0 |
-
-## Live Verification (deployed)
-- Backend https://backend-virid-ten-43.vercel.app: / = 200; /admin/overview, /admin/users, /admin/alerts/pending (no token) = 401 protected
-- Frontend https://frontend-eight-phi-60.vercel.app: /admin = 200 (guard renders, redirects non-admin to /dashboard); /admin/health = 200 (X-Protected-Route: true)
-## Pending Integration
-- None - all M1-M5 complete
+- live fetch-all-44 storing real events to production DB
+- final Reviewer pass, final report, commits, deploy

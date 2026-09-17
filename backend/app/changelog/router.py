@@ -18,6 +18,8 @@ from ..alerts import process_new_events, send_approved_alerts
 from ..deps import get_current_user_id, require_internal_secret
 from .scheduler import fetch_all_providers, log_health, run_daily_scans, run_impact_analysis_for_recent_events
 from .admin import get_pending_alerts, approve_alert, disable_alert, is_admin
+from .classify import CHANGE_TYPES, SEVERITIES, CONFIDENCES
+from .sources import ALL_PROVIDER_IDS, PROVIDER_SOURCES_BY_ID
 
 router = APIRouter()
 
@@ -92,11 +94,31 @@ async def daily_scan(
 async def health_check(_guard: None = Depends(require_internal_secret)) -> dict:
     """Health check for changelog monitoring. Requires internal secret.
 
-    Safely reports DB connectivity without leaking exception internals.
+    Safely reports DB connectivity + a per-provider status summary without
+    leaking exception internals.
     """
     try:
         db().table("changelog_events").select("id").limit(1).execute()
-        return {"status": "ok", "database": "connected"}
+        status_rows = (
+            db().table("provider_monitoring_status")
+            .select("provider_id, status, last_fetch_at, last_success_at, last_error, consecutive_errors")
+            .execute()
+        ).data or []
+        # Aggregate severity counts across the matrix.
+        by_status: dict[str, int] = {}
+        error_providers: list[str] = []
+        for r in status_rows:
+            st = r.get("status") or "LIMITED"
+            by_status[st] = by_status.get(st, 0) + 1
+            if st == "ERROR" and r.get("provider_id"):
+                error_providers.append(r["provider_id"])
+        return {
+            "status": "ok",
+            "database": "connected",
+            "providers_total": len(status_rows),
+            "providers_by_status": by_status,
+            "error_providers": error_providers[:20],
+        }
     except Exception:
         # Log server-side only; never echo the exception to the client.
         import logging
@@ -157,3 +179,114 @@ async def changelog_notices(user_id: str = Depends(get_current_user_id)) -> dict
         .execute()
     ).data or []
     return {"notices": notices}
+
+
+# ---------------------------------------------------------------------------
+# Provider Changes: events list, detail, matrix, review/dismiss
+# ---------------------------------------------------------------------------
+@router.get("/internal/changelog/events")
+async def changelog_events(
+    provider: str | None = None,
+    change_type: str | None = None,
+    severity: str | None = None,
+    confidence: str | None = None,
+    review_state: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """List changelog events across ALL 44 providers (independent of repo selection).
+
+    Provider filter is optional; when omitted ALL 44 are included (providers
+    with zero events appear in the monitoring matrix endpoint, not here).
+    """
+    q = db().table("changelog_events").select("*").order("detected_at", desc=True)
+    if provider:
+        q = q.eq("api_name", provider)
+    if change_type:
+        q = q.eq("change_type", change_type)
+    if severity:
+        q = q.eq("severity", severity)
+    if confidence:
+        q = q.eq("confidence", confidence)
+    if review_state:
+        q = q.eq("review_state", review_state)
+    else:
+        q = q.neq("review_state", "dismissed")
+    q = q.range(offset, offset + max(min(limit, 100), 1) - 1)
+    rows = q.execute().data or []
+    return {"events": rows, "total_hint": len(rows) == limit + 1}
+
+
+@router.get("/internal/changelog/events/{event_id}")
+async def changelog_event_detail(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Detail view for a single changelog event (evidence, source, impact)."""
+    row = (
+        db().table("changelog_events")
+        .select("*")
+        .eq("id", event_id)
+        .limit(1)
+        .execute()
+    ).data
+    if not row:
+        raise HTTPException(status_code=404, detail="Event not found")
+    event = row[0]
+    # Related alerts (for the user's repos)
+    repo_ids = [r["id"] for r in (db().table("repos").select("id").eq("user_id", user_id).execute().data or [])]
+    alerts_for_event = (
+        db().table("alerts")
+        .select("*")
+        .eq("changelog_event_id", event_id)
+        .in_("repo_id", repo_ids)
+        .execute()
+    ).data if repo_ids else []
+    return {"event": event, "alerts": alerts_for_event}
+
+
+@router.get("/internal/changelog/monitoring")
+async def monitoring_matrix(
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """44-provider monitoring status matrix (independent of repo)."""
+    rows = (
+        db().table("provider_monitoring_status")
+        .select("*")
+        .order("provider_id")
+        .execute()
+    ).data or []
+    # Merge with registry for display_name / category if any rows missing
+    seen = {r["provider_id"] for r in rows}
+    for pid in ALL_PROVIDER_IDS:
+        if pid not in seen:
+            src = PROVIDER_SOURCES_BY_ID.get(pid)
+            rows.append({
+                "provider_id": pid,
+                "display_name": src.display_name if src else pid,
+                "status": "SOURCE_UNAVAILABLE" if src and src.source_kind == "NONE" else "LIMITED",
+                "source_kind": src.source_kind if src else "UNKNOWN",
+                "source_url": src.changelog_url if src else "",
+            })
+    return {"providers": rows}
+
+
+@router.post("/internal/changelog/events/{event_id}/review")
+async def review_event(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Mark an event as reviewed."""
+    res = db().table("changelog_events").update({"review_state": "reviewed"}).eq("id", event_id).execute()
+    return {"updated": bool(res.data)}
+
+
+@router.post("/internal/changelog/events/{event_id}/dismiss")
+async def dismiss_event(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Dismiss an event (hidden from default view)."""
+    res = db().table("changelog_events").update({"review_state": "dismissed"}).eq("id", event_id).execute()
+    return {"updated": bool(res.data)}

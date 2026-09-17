@@ -227,6 +227,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     { name: "Repositories", href: "/dashboard/repos", icon: Icon(<ReposIconSVG />) },
     { name: "Alerts", href: "/dashboard/alerts", icon: Icon(<AlertsIconSVG />) },
     { name: "Provider Changes", href: "/dashboard/changelog", icon: Icon(<ChangelogIconSVG />) },
+    { name: "Monitoring Matrix", href: "/dashboard/providers", icon: Icon(<ChangelogIconSVG />) },
     { name: "Developer CLI", href: "/dashboard/cli", icon: Icon(<CliIconSVG />) },
     { name: "Billing", href: "/dashboard/billing", icon: Icon(<BillingIconSVG />) },
     { name: "Integrations", href: "/dashboard/settings/integrations", icon: Icon(<SlackIconSVG />) },

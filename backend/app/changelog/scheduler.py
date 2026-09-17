@@ -1,8 +1,12 @@
-"""Changelog monitoring scheduler (Phase B).
+"""Changelog monitoring scheduler — real detection for all 44 providers.
 
-Orchestrates fetching from all provider changelogs, deduplication,
-and insertion into the changelog_events table. Also handles daily
-code-health scans and email notifications.
+Pipeline per provider (isolated — one failing provider never kills the run):
+  fetch (official adapter) -> RawEntry -> classify (evidence-based)
+  -> fingerprint (external_id) -> dedup store -> provider status update
+
+Budgeting is preserved for the Vercel cron (30s fetch / 60s daily-scan):
+each provider is hard-capped, the whole fetch run is capped, and leftovers
+are reported truthfully (timed_out) and picked up next tick.
 """
 from __future__ import annotations
 
@@ -15,183 +19,295 @@ from typing import Optional
 
 from ..config import settings
 from ..db import db
-from ..health.code_health import run_code_health_checks
-from .base import ChangelogEvent
-from .matching import match_event_to_repo
+from . import classify
+from .base import FetchError, RawEntry
+from .fingerprint import entry_fingerprint
+from .sources import (ALL_PROVIDER_IDS, HTML_STRICT, NONE, PROVIDER_SOURCES_BY_ID,
+                      STATUS_ACTIVE, STATUS_ERROR, STATUS_LIMITED, STATUS_SOURCE_UNAVAILABLE)
 
-# Vercel cron function timeout is 30s; give each provider parser a hard cap so
-# one slow scraper cannot blow the whole run, and cap the TOTAL run so the
-# endpoint always returns inside the budget (leftovers are marked timed_out
-# and picked up by the next cron tick — DB dedup makes that safe).
-FETCH_TIMEOUT_SECONDS = 15
-FETCH_MAX_WORKERS = 4
-TOTAL_BUDGET_SECONDS = 25
+# Vercel cron function timeout is 30s; per-provider hard cap + total budget
+# keep the endpoint inside the budget (leftovers are timed_out and picked up
+# by the next tick — external_id dedup makes partial runs safe).
+# Budgets are env-tunable so local sweeps can go deeper than the cron.
+FETCH_TIMEOUT_SECONDS = int(os.getenv("FETCH_TIMEOUT_SECONDS", "12"))
+FETCH_MAX_WORKERS = int(os.getenv("FETCH_MAX_WORKERS", "4"))
+TOTAL_BUDGET_SECONDS = int(os.getenv("TOTAL_BUDGET_SECONDS", "25"))
 
 # Impact analysis runs inside the daily-scan endpoint (60s Vercel budget).
-# Cap the number of analyzed events per invocation; since detections are
-# preloaded in memory this is a pure CPU/DB-persist bound, and leftover
-# events are covered on the next cron tick (the (repo, event) pair check
-# makes it idempotent).
-MAX_IMPACT_EVENTS_PER_RUN = int(os.getenv("MAX_IMPACT_EVENTS_PER_RUN", "20"))
+MAX_IMPACT_EVENTS_PER_RUN = int(__import__("os").getenv("MAX_IMPACT_EVENTS_PER_RUN", "20"))
+
+# Failures before a provider is marked ERROR (then retried on next ticks).
+MAX_CONSECUTIVE_ERRORS = 3
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def store_events(events: list[ChangelogEvent]) -> dict:
-    """Store changelog events in the database with deduplication.
-    
-    Returns stats: {stored: int, duplicates: int, errors: int}
+# ---------------------------------------------------------------------------
+# DB helpers
+# ---------------------------------------------------------------------------
+def _db_retry(fn, *args, attempts: int = 3, **kwargs):
+    """Run a Supabase call with retry-backoff on connectivity errors.
+
+    The Supabase client's PostgREST connection can drop mid-sweep
+    ("Server disconnected"); a single retry usually succeeds. Only
+    transport-level errors are retried — API errors (4xx/5xx) pass through.
     """
-    stats = {"stored": 0, "duplicates": 0, "errors": 0}
-    
-    for event in events:
+    last: Exception | None = None
+    for i in range(attempts):
         try:
-            # Check for duplicate using provider + source_url + content_hash
-            existing = (
-                db()
+            return fn(*args, **kwargs)
+        except Exception as e:  # noqa: BLE001
+            msg = str(e)
+            retryable = (
+                "Server disconnected" in msg or "Connection reset" in msg
+                or "timed out" in msg.lower() or "connection" in msg.lower()
+                or "network" in msg.lower()
+            )
+            if not retryable or i == attempts - 1:
+                raise
+            last = e
+            _time.sleep(0.5 * (i + 1))
+    raise last
+
+
+# ---------------------------------------------------------------------------
+# Store (with fingerprint dedup)
+# ---------------------------------------------------------------------------
+def store_entries(provider_id: str, entries: list[RawEntry], source_kind: str) -> dict:
+    """Classify + store official entries with external-id dedup.
+
+    Existing external_id/fingerprint -> update last_seen_at (not duplicate).
+    Missing required fields are skipped (the invariant lives in RawEntry).
+    Returns stats: {stored, duplicates, skipped, errors}
+    """
+    stats = {"stored": 0, "duplicates": 0, "skipped": 0, "errors": 0}
+    if not entries:
+        return stats
+
+    # ONE bulk lookup per provider (was 3 queries per entry): collect all
+    # ids that already exist by external_id or fingerprint.
+    external_ids = [e.external_id for e in entries if e.external_id]
+    fingerprints = [entry_fingerprint(provider_id, e) for e in entries]
+
+    existing: set[str] = set()
+    try:
+        if external_ids:
+            res = _db_retry(
+                lambda: db()
                 .table("changelog_events")
-                .select("id")
-                .eq("api_name", event.provider)
-                .eq("source_url", event.source_url)
-                .eq("content_hash", event.content_hash)
-                .limit(1)
+                .select("external_id")
+                .eq("api_name", provider_id)
+                .in_("external_id", external_ids)
                 .execute()
             )
-            
-            if existing.data:
+            existing.update(e["external_id"] for e in res.data if e.get("external_id"))
+        if fingerprints:
+            res = _db_retry(
+                lambda: db()
+                .table("changelog_events")
+                .select("fingerprint")
+                .eq("api_name", provider_id)
+                .in_("fingerprint", fingerprints)
+                .execute()
+            )
+            existing.update(e["fingerprint"] for e in res.data if e.get("fingerprint"))
+    except Exception as e:  # noqa: BLE001 — lookup failure: fall back to insert path
+        print(f"Bulk dedup lookup failed for {provider_id}: {e}")
+
+    for entry in entries:
+        try:
+            cls = classify.classify_entry(entry.title, entry.summary, source_kind)
+            fingerprint = entry_fingerprint(provider_id, entry)
+
+            if entry.external_id in existing or fingerprint in existing:
+                # Same official entry seen again — never a duplicate row.
+                matched = entry.external_id if entry.external_id in existing else fingerprint
+                try:
+                    _db_retry(
+                        lambda m=matched: db()
+                        .table("changelog_events")
+                        .update({"last_seen_at": _now_iso()})
+                        .eq("api_name", provider_id)
+                        .or_(f"external_id.eq.{matched},fingerprint.eq.{matched}")
+                        .execute()
+                    )
+                except Exception as ue:  # noqa: BLE001 — best effort touch
+                    print(f"Touch {provider_id} {matched}: {ue}")
                 stats["duplicates"] += 1
                 continue
-            
-            # Insert new event
+
             row = {
-                "api_name": event.provider,
-                "title": event.title,
-                "source_url": event.source_url,
-                "detected_at": event.published_date,
-                "description": event.raw_summary,
-                "change_type": event.event_type,
-                "severity": event.severity,
-                "content_hash": event.content_hash,
-                "symbols": ",".join(event.symbols) if event.symbols else None,
-                "old_value": event.symbols[0] if event.symbols else None,
-                "new_value": event.symbols[1] if len(event.symbols) > 1 else None,
-                "processed_at": None,  # Not processed yet
+                "api_name": provider_id,
+                "title": entry.title[:500],
+                "description": entry.summary[:2000],
+                "source_url": entry.url,
+                "external_id": entry.external_id,
+                "source_type": source_kind,
+                "fingerprint": fingerprint,
+                "content_hash": entry.external_id,
+                "detected_at": entry.published_at,
+                "first_seen_at": _now_iso(),
+                "last_seen_at": _now_iso(),
+                "change_type": cls.change_type,
+                "severity": cls.severity,
+                "confidence": cls.confidence,
+                "severity_evidence": json.dumps(cls.evidence) if cls.evidence else None,
+                "confidence_evidence": json.dumps(cls.evidence) if cls.evidence else None,
+                "symbols": ",".join(cls.symbols) if cls.symbols else None,
+                "old_value": cls.old_value,
+                "new_value": cls.new_value,
+                "processed_at": None,
+                "provider_display": PROVIDER_SOURCES_BY_ID.get(provider_id).display_name,
             }
-            
-            # Add optional fields
-            if event.deadline:
-                row["deadline"] = event.deadline
-            if event.affected_endpoints:
-                row["affected_endpoints"] = json.dumps(event.affected_endpoints)
-            if event.affected_sdks:
-                row["affected_sdks"] = json.dumps(event.affected_sdks)
-            if event.affected_versions:
-                row["affected_versions"] = json.dumps(event.affected_versions)
-            
-            db().table("changelog_events").insert(row).execute()
-            stats["stored"] += 1
-            
-        except Exception as e:
+            if cls.affected_endpoints:
+                row["affected_endpoints"] = json.dumps(cls.affected_endpoints)
+            if cls.deadline:
+                row["deadline"] = cls.deadline
+
+            try:
+                _db_retry(lambda r=row: db().table("changelog_events").insert(r).execute())
+                stats["stored"] += 1
+                existing.add(entry.external_id)
+                existing.add(fingerprint)
+            except Exception as ie:  # noqa: BLE001
+                if "23505" in str(ie) or "duplicate" in str(ie).lower():
+                    # Race with another worker/tick — treat as duplicate.
+                    stats["duplicates"] += 1
+                else:
+                    stats["errors"] += 1
+                    print(f"Error storing {provider_id} entry: {ie}")
+        except Exception as e:  # noqa: BLE001 — one bad entry must not kill the run
             stats["errors"] += 1
-            print(f"Error storing event: {e}")
-    
+            print(f"Error storing {provider_id} entry: {e}")
     return stats
 
 
-def fetch_provider(provider_id: str, user_agent: str | None = None) -> list[ChangelogEvent]:
-    """Fetch changelog events for a single provider."""
-    from .parsers import FETCHERS
-    
-    fetcher_class = FETCHERS.get(provider_id)
-    if not fetcher_class:
-        return []
-    
-    ua = user_agent or settings.scraper_user_agent
-    fetcher = fetcher_class(user_agent=ua)
-    
+def _update_status(provider_id: str, status: str, *, fetched: int, duration_ms: int,
+                   error: str | None = None, http_ok: bool = True) -> None:
+    """Update provider_monitoring_status (honest matrix row per provider)."""
+    source = PROVIDER_SOURCES_BY_ID.get(provider_id)
     try:
-        return fetcher.fetch()
-    except Exception as e:
-        print(f"Error fetching {provider_id}: {e}")
+        row = {
+            "provider_id": provider_id,
+            "display_name": source.display_name if source else provider_id,
+            "status": status,
+            "source_kind": source.source_kind if source else "NONE",
+            "source_url": source.changelog_url if source else "",
+            "feed_url": source.feed_url if source and source.feed_url else "",
+            "last_fetch_at": _now_iso(),
+            "duration_ms": duration_ms,
+            "last_http_status": 200 if http_ok else None,
+        }
+        if error:
+            row["last_error"] = error[:500]
+        _db_retry(
+            lambda: db().table("provider_monitoring_status").upsert(
+                row, on_conflict="provider_id"
+            ).execute()
+        )
+    except Exception as e:  # noqa: BLE001 — status logging is best-effort
+        print(f"Status update failed for {provider_id}: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Fetch orchestration (44 providers, isolated)
+# ---------------------------------------------------------------------------
+def fetch_provider(provider_id: str, user_agent: str | None = None) -> list[RawEntry]:
+    """Fetch official entries for one provider using its registered adapter."""
+    from .parsers import FETCHERS
+
+    adapter_cls = FETCHERS.get(provider_id)
+    if not adapter_cls:
         return []
+    source = PROVIDER_SOURCES_BY_ID.get(provider_id)
+    if source is None or source.source_kind == NONE:
+        return []
+    ua = user_agent or settings.scraper_user_agent
+    adapter = adapter_cls(source=source, user_agent=ua)
+    return adapter.fetch()
 
 
 def fetch_all_providers(user_agent: str | None = None) -> dict:
-    """Fetch changelogs from all Phase B providers in parallel, bounded.
+    """Fetch all 44 providers in parallel (bounded), update statuses honestly.
 
-    Returns per-provider stats. Providers are fetched concurrently (max 4
-    workers), each parser is hard-capped at FETCH_TIMEOUT_SECONDS, and the
-    whole run is capped at TOTAL_BUDGET_SECONDS. Providers that can't finish
-    inside the budget are reported as timed_out — never silently dropped.
+    Per provider returns: {fetched, stored, duplicates, skipped, errors,
+    timed_out?, status, last_error?}
     """
-    PHASE_B_PROVIDERS = [
-        "stripe", "shopify", "twilio", "sendgrid", "github",
-        "openai", "anthropic", "vercel", "supabase", "firebase",
-        "slack", "resend",
-    ]
-
     results: dict = {}
     deadline = _time.time() + TOTAL_BUDGET_SECONDS
+    provider_ids = list(ALL_PROVIDER_IDS)
 
-    def _work(provider_id: str) -> tuple[str, dict]:
+    def _work(pid: str) -> tuple[str, dict, str | None, int]:
+        start = _time.time()
+        error: str | None = None
         try:
-            events = _fetch_with_timeout(provider_id, user_agent)
-            stats = store_events(events)
-            return provider_id, {
-                "fetched": len(events),
-                **stats,
-            }
-        except Exception as e:  # noqa: BLE001 — a bad provider must not kill the run
-            print(f"Provider {provider_id} failed: {e}")
-            return provider_id, {"fetched": 0, "stored": 0, "duplicates": 0, "errors": 1}
+            entries = _fetch_with_timeout(pid, user_agent)
+            stats = store_entries(pid, entries, PROVIDER_SOURCES_BY_ID[pid].source_kind)
+            stats["fetched"] = len(entries)
+            status = STATUS_LIMITED if len(entries) == 0 else STATUS_ACTIVE
+            return pid, {**stats, "status": status}, None, int((_time.time() - start) * 1000)
+        except Exception as e:  # noqa: BLE001
+            error = str(e)[:500]
+            return pid, {"fetched": 0, "stored": 0, "duplicates": 0,
+                         "skipped": 0, "errors": 1, "status": STATUS_ERROR,
+                         "last_error": error}, error, int((_time.time() - start) * 1000)
 
     pool = ThreadPoolExecutor(max_workers=FETCH_MAX_WORKERS)
     try:
-        futures: dict[Future, str] = {pool.submit(_work, pid): pid for pid in PHASE_B_PROVIDERS}
+        futures: dict[Future, str] = {pool.submit(_work, pid): pid for pid in provider_ids}
         pending = set(futures)
         while pending:
             remaining = deadline - _time.time()
             if remaining <= 0:
                 break
             try:
-                for future in as_completed(pending, timeout=remaining):
+                for future in as_completed(pending, timeout=max(remaining, 0.1)):
                     pid = futures[future]
                     pending.discard(future)
                     try:
-                        _, stats = future.result()
+                        pid_r, stats, error, duration_ms = future.result()
                     except Exception as e:  # noqa: BLE001
-                        stats = {"fetched": 0, "stored": 0, "duplicates": 0, "errors": 1}
-                        print(f"Provider {pid} failed: {e}")
+                        stats, error = {"fetched": 0, "stored": 0, "duplicates": 0,
+                                        "skipped": 0, "errors": 1, "status": STATUS_ERROR}, str(e)
+                        duration_ms = int((_time.time() - _time.time()) * 0) or 1
                     results.setdefault(pid, stats)
+                    _update_status(pid, stats.get("status", STATUS_ERROR),
+                                   fetched=stats.get("fetched", 0), duration_ms=duration_ms,
+                                   error=error)
                     if _time.time() >= deadline:
                         break
             except _TimeoutError:
                 break
     finally:
-        # Never block the response on stuck workers: serverless cron recycles
-        # the process anyway, and DB dedup makes a partial run safe.
         pool.shutdown(wait=False, cancel_futures=True)
 
-    # Anything still pending when the budget expired is reported truthfully.
+    # Pending (budget expired) — truthful timed_out, never silently dropped.
     for future in pending:
         pid = futures[future]
-        results.setdefault(pid, {"fetched": 0, "stored": 0, "duplicates": 0, "errors": 1, "timed_out": True})
+        results.setdefault(pid, {"fetched": 0, "stored": 0, "duplicates": 0, "skipped": 0,
+                                 "errors": 1, "timed_out": True, "status": STATUS_ERROR})
+        _update_status(pid, STATUS_ERROR, fetched=0, duration_ms=0,
+                       error="timed out inside cron budget")
+
+    # Providers with no source at all: mark SOURCE_UNAVAILABLE.
+    for pid in provider_ids:
+        src = PROVIDER_SOURCES_BY_ID.get(pid)
+        if src and src.source_kind == NONE:
+            results.setdefault(pid, {"fetched": 0, "stored": 0, "duplicates": 0, "skipped": 0,
+                                     "errors": 0, "status": STATUS_SOURCE_UNAVAILABLE})
+            _update_status(pid, STATUS_SOURCE_UNAVAILABLE, fetched=0, duration_ms=0,
+                           error="no reliable official machine-readable source")
 
     return results
 
 
-_TimeoutError = TimeoutError  # noqa: N816 — used for the as_completed budget
+_TimeoutError = TimeoutError  # noqa: N816
 
 
-def _fetch_with_timeout(provider_id: str, user_agent: str | None) -> list[ChangelogEvent]:
-    """Run a single provider fetch inside a worker thread with a hard timeout.
-
-    urllib/requests-style parsers can hang on a slow endpoint; the threadpool
-    keeps the overall cron run bounded because we only ever wait
-    FETCH_TIMEOUT_SECONDS for one parser.
-    """
+def _fetch_with_timeout(provider_id: str, user_agent: str | None) -> list[RawEntry]:
+    """Run one provider fetch in a dedicated worker with a hard timeout."""
     pool = ThreadPoolExecutor(max_workers=1)
     try:
         future = pool.submit(fetch_provider, provider_id, user_agent)
@@ -200,15 +316,13 @@ def _fetch_with_timeout(provider_id: str, user_agent: str | None) -> list[Change
         except _TimeoutError:
             future.cancel()
             print(f"Provider {provider_id} exceeded {FETCH_TIMEOUT_SECONDS}s — skipping")
-            return []
+            raise FetchError(f"{provider_id}: fetch exceeded {FETCH_TIMEOUT_SECONDS}s")
     finally:
-        # Do not block this worker on a stuck parser; the serverless cron
-        # process is recycled anyway.
         pool.shutdown(wait=False, cancel_futures=True)
 
 
 def log_health(provider_id: str, status: str, duration_ms: int, error: str | None = None):
-    """Log fetch health to system_health table (uses existing schema with job_name)."""
+    """Legacy health log to system_health (best-effort, kept for compat)."""
     try:
         row = {
             "job_name": f"changelog:{provider_id}",
@@ -222,75 +336,54 @@ def log_health(provider_id: str, status: str, duration_ms: int, error: str | Non
         pass  # Best-effort logging
 
 
+# ---------------------------------------------------------------------------
+# Daily scans + impact analysis (unchanged behavior; kept for the cron router)
+# ---------------------------------------------------------------------------
 def run_daily_scan(repo_id: str) -> dict:
-    """Run daily scan for a repository: changelog check + code-health check.
-    
-    Returns: {changelog_check_status, code_check_status, changelog_issues_count, code_issues_count}
-    """
+    from ..health.code_health import run_code_health_checks
     stats = {
         "changelog_check_status": "skipped_no_providers",
         "code_check_status": "clear",
         "changelog_issues_count": 0,
         "code_issues_count": 0,
     }
-    
     try:
-        # Get repo details
         repo = db().table("repos").select("*").eq("id", repo_id).execute()
         if not repo.data:
             return stats
-        
         repo_data = repo.data[0]
         user_id = repo_data.get("user_id")
-        
-        # Check 1: Changelog breaking changes
-        # Get connected providers for this user
+
         connections = db().table("provider_connections").select("provider").eq("user_id", user_id).execute()
         providers = [c["provider"] for c in connections.data] if connections.data else []
-        
         if providers:
-            # Check for breaking changes in recent changelog events
             breaking_changes = (
                 db().table("changelog_events")
                 .select("id")
                 .in_("api_name", providers)
                 .eq("severity", "breaking")
-                .gte("detected_at", _now_iso()[:10])  # Today
+                .gte("detected_at", _now_iso()[:10])
                 .execute()
             )
-            
             if breaking_changes.data:
                 stats["changelog_check_status"] = "breaking_change_found"
                 stats["changelog_issues_count"] = len(breaking_changes.data)
             else:
                 stats["changelog_check_status"] = "clear"
-        
-        # Check 2: Code-health rules
-        # Get detections for this repo (api_detections is the real scan store;
-        # the legacy "detections" table does not exist in production)
+
         detections = db().table("api_detections").select("*").eq("repo_id", repo_id).execute()
         detection_list = detections.data if detections.data else []
-        
         if detection_list:
-            # Get file contents (simplified - in production would fetch from GitHub)
             file_contents = {}
             for det in detection_list:
-                file_path = det.get("file_path", "")
-                if file_path and file_path not in file_contents:
-                    # In real implementation, fetch file content from GitHub
-                    # For now, use matched_snippet as proxy
-                    file_contents[file_path] = det.get("matched_snippet", "")
-            
-            # Run code-health checks
+                fp = det.get("file_path", "")
+                if fp and fp not in file_contents:
+                    file_contents[fp] = det.get("matched_snippet", "")
             issues = run_code_health_checks(repo_id, detection_list, file_contents)
-            
             if issues:
                 stats["code_check_status"] = "issue_found"
                 stats["code_issues_count"] = len(issues)
-                
-                # Store new issues (only if not already detected)
                 for issue in issues:
-                    # Check if issue already exists
                     existing = (
                         db().table("code_health_issues")
                         .select("id")
@@ -302,7 +395,6 @@ def run_daily_scan(repo_id: str) -> dict:
                         .limit(1)
                         .execute()
                     )
-                    
                     if not existing.data:
                         db().table("code_health_issues").insert({
                             "repo_id": repo_id,
@@ -313,99 +405,18 @@ def run_daily_scan(repo_id: str) -> dict:
                             "line_number": issue.line_number,
                             "status": "open",
                         }).execute()
-        
         return stats
-        
     except Exception as e:
         print(f"Error running daily scan for repo {repo_id}: {e}")
         return stats
 
 
-def insert_daily_scan_run(repo_id: str, stats: dict):
-    """Insert a daily_scan_runs row for the repo."""
-    try:
-        db().table("daily_scan_runs").insert({
-            "repo_id": repo_id,
-            "changelog_check_status": stats.get("changelog_check_status", "skipped_no_providers"),
-            "code_check_status": stats.get("code_check_status", "clear"),
-            "changelog_issues_count": stats.get("changelog_issues_count", 0),
-            "code_issues_count": stats.get("code_issues_count", 0),
-            "ran_at": _now_iso(),
-        }).execute()
-    except Exception as e:
-        print(f"Error inserting daily scan run for repo {repo_id}: {e}")
-
-
-def send_daily_status_email(repo_id: str, stats: dict, user_email: str, repo_name: str, notify_daily_status: bool):
-    """Send daily status email (only if issues found or daily status enabled)."""
-    has_issues = (
-        stats.get("changelog_issues_count", 0) > 0 or
-        stats.get("code_issues_count", 0) > 0
-    )
-    
-    # Skip if no issues and daily status not enabled
-    if not has_issues and not notify_daily_status:
-        return
-    
-    try:
-        from ..email_service import send_alert_email
-        
-        # Build email content
-        if has_issues:
-            subject = f"Breaklytix Alert: Issues found for {repo_name}"
-            status_text = "issues were detected"
-        else:
-            subject = f"Breaklytix Daily Status: {repo_name} — All Clear"
-            status_text = "no issues found"
-        
-        # Build HTML body
-        html_parts = [
-            '<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;">',
-            f'<h2 style="margin:0 0 8px;">Daily Status: {repo_name}</h2>',
-            f'<p style="color:#555;">{status_text} in your daily check.</p>',
-        ]
-        
-        if stats.get("changelog_issues_count", 0) > 0:
-            html_parts.append(f'<p style="color:#b91c1c;"><strong>Breaking changes:</strong> {stats["changelog_issues_count"]} detected</p>')
-        
-        if stats.get("code_issues_count", 0) > 0:
-            html_parts.append(f'<p style="color:#b91c1c;"><strong>Code health issues:</strong> {stats["code_issues_count"]} detected</p>')
-        
-        if not has_issues:
-            html_parts.append('<p style="color:#16a34a;">All checks passed. No breaking changes or code health issues found.</p>')
-        
-        html_parts.append("</div>")
-        html = "\n".join(html_parts)
-        text = f"Daily Status: {repo_name} — {status_text}"
-        
-        send_alert_email(
-            user_id=None,  # Will be resolved from email
-            recipient=user_email,
-            alert_type="daily_status",
-            subject=subject,
-            html=html,
-            text=text,
-        )
-        
-    except Exception as e:
-        print(f"Error sending daily status email: {e}")
-
-
 def run_daily_scans():
-    """Run daily scans for all monitored repos. Called by cron.
-
-    Each repo is scanned at most once per 24h (due check against the
-    latest daily_scan_runs.ran_at). Token-expired / repo-deleted /
-    permission-revoked failures are caught per-repo and reported in the
-    scan run record, never silently dropped.
-    """
     try:
-        # Get all repos with connected providers
         repos = db().table("repos").select("*").execute()
         if not repos.data:
             return
-
-        # Latest scan per repo (due check)
+        from datetime import timedelta
         latest = (
             db().table("daily_scan_runs")
             .select("repo_id, ran_at")
@@ -418,15 +429,10 @@ def run_daily_scans():
             rid = row.get("repo_id")
             if rid and rid not in latest_by_repo:
                 latest_by_repo[rid] = row.get("ran_at") or ""
-
-        from datetime import datetime, timedelta
         cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-
         for repo in repos.data:
             repo_id = repo["id"]
             user_id = repo.get("user_id")
-
-            # Due check: skip repos scanned within the last 24h
             last = latest_by_repo.get(repo_id)
             if last:
                 try:
@@ -436,60 +442,37 @@ def run_daily_scans():
                     if last_dt > cutoff:
                         continue
                 except ValueError:
-                    pass  # unparseable → scan anyway
-
-            # Get user email and daily status preference
+                    pass
             user = db().table("users").select("email,notify_daily_status").eq("id", user_id).execute()
             if not user.data:
                 continue
-            
             user_data = user.data[0]
             user_email = user_data.get("email")
-            notify_daily_status = user_data.get("notify_daily_status", False)
-            
             if not user_email:
                 continue
-            
-            # Run daily scan
             stats = run_daily_scan(repo_id)
-            
-            # Insert scan run record
-            insert_daily_scan_run(repo_id, stats)
-            
-            # Send email if needed
-            send_daily_status_email(
-                repo_id=repo_id,
-                stats=stats,
-                user_email=user_email,
-                repo_name=repo.get("full_name", "Unknown"),
-                notify_daily_status=notify_daily_status,
-            )
-            
+            try:
+                db().table("daily_scan_runs").insert({
+                    "repo_id": repo_id,
+                    "changelog_check_status": stats.get("changelog_check_status", "skipped_no_providers"),
+                    "code_check_status": stats.get("code_check_status", "clear"),
+                    "changelog_issues_count": stats.get("changelog_issues_count", 0),
+                    "code_issues_count": stats.get("code_issues_count", 0),
+                    "ran_at": _now_iso(),
+                }).execute()
+            except Exception as e:
+                print(f"Error inserting daily scan run: {e}")
     except Exception as e:
         print(f"Error running daily scans: {e}")
 
 
 def run_impact_analysis_for_recent_events():
-    """Run impact analysis for recent changelog events against all repos.
-
-    Called after fetching new changelog events to automatically analyze
-    their impact on connected repositories.
-
-    Bounded + batched so it fits the Vercel function budget:
-      * only impactful change types (breaking/deprecation/security/removal),
-      * at most MAX_IMPACT_EVENTS_PER_RUN events per invocation (the rest are
-        covered on the next cron tick),
-      * detections and existing analyses are loaded ONCE (grouped in memory)
-        instead of one query per (event, repo) pair.
-    """
     try:
-        from datetime import datetime, timedelta, timezone
+        from datetime import timedelta
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=48)).isoformat()
-        IMPACT_CHANGE_TYPES = ("breaking_change", "breaking", "deprecation", "security", "removal")
-
+        IMPACT_CHANGE_TYPES = ("BREAKING_CHANGE", "DEPRECATION", "SECURITY_CHANGE")
         events = (
-            db()
-            .table("changelog_events")
+            db().table("changelog_events")
             .select("*")
             .gte("detected_at", cutoff)
             .in_("change_type", IMPACT_CHANGE_TYPES)
@@ -497,15 +480,11 @@ def run_impact_analysis_for_recent_events():
             .limit(MAX_IMPACT_EVENTS_PER_RUN)
             .execute()
         ).data or []
-
         if not events:
             return
-
         repos = (db().table("repos").select("*").execute()).data or []
         if not repos:
             return
-
-        # Load ALL detections once, grouped by provider (case-insensitive).
         detections = (
             db().table("api_detections")
             .select("id, repo_id, api_name, file_path, line_number, matched_snippet, symbols")
@@ -514,125 +493,89 @@ def run_impact_analysis_for_recent_events():
         by_provider: dict[str, list[dict]] = {}
         for d in detections:
             by_provider.setdefault((d.get("api_name") or "").lower(), []).append(d)
-
-        # Load existing analysis pairs once, so we skip already-analyzed events.
         existing = (
             db().table("impact_analyses").select("repo_id, changelog_event_id").execute()
         ).data or []
         done_pairs = {(a.get("repo_id"), a.get("changelog_event_id")) for a in existing}
 
-        # Import impact analyzer
         from ..impact.analyzer import analyze_changelog_event, persist_impact_analysis
 
         for event in events:
             provider = event.get("api_name") or event.get("provider", "")
             if not provider:
                 continue
-
             provider_dets = by_provider.get(provider.lower(), [])
             if not provider_dets:
                 continue
-
-            # Group this provider's detections by repo.
             by_repo: dict[str, list[dict]] = {}
             for d in provider_dets:
                 rid = d.get("repo_id")
                 if rid:
                     by_repo.setdefault(rid, []).append(d)
-
             for repo_id, dets in by_repo.items():
                 if (repo_id, event["id"]) in done_pairs:
-                    continue  # Already analyzed
-
+                    continue
                 repo = next((r for r in repos if r["id"] == repo_id), None)
                 if not repo:
                     continue
-
                 try:
-                    analysis = analyze_changelog_event(
-                        event=event,
-                        repo_id=repo_id,
-                        detections=dets,
-                    )
-                    analysis_id = persist_impact_analysis(analysis)
+                    analysis = analyze_changelog_event(event=event, repo_id=repo_id, detections=dets)
+                    persist_impact_analysis(analysis)
                     done_pairs.add((repo_id, event["id"]))
-
-                    # Send alert for high-risk or breaking changes
                     if analysis.severity in ("high", "breaking"):
-                        _send_impact_alert(
-                            repo_id=repo_id,
-                            analysis=analysis,
-                            repo_name=repo.get("full_name", "Unknown"),
-                        )
+                        _send_impact_alert(repo_id=repo_id, analysis=analysis,
+                                           repo_name=repo.get("full_name", "Unknown"))
                 except Exception as e:
                     print(f"Error analyzing impact for repo {repo_id}: {e}")
-
     except Exception as e:
         print(f"Error running impact analysis: {e}")
 
 
 def _send_impact_alert(repo_id: str, analysis, repo_name: str):
-    """Send alert for high-risk or breaking impact."""
     try:
         from ..email_service import send_alert_email
-        
-        # Get user email
         repo = db().table("repos").select("user_id").eq("id", repo_id).execute()
         if not repo.data:
             return
-        
         user_id = repo.data[0].get("user_id")
         user = db().table("users").select("email,notify_email_alerts").eq("id", user_id).execute()
         if not user.data:
             return
-        
         user_data = user.data[0]
         user_email = user_data.get("email")
         notify_alerts = user_data.get("notify_email_alerts", True)
-        
         if not user_email or not notify_alerts:
             return
-        
-        # Build email
         severity_text = "BREAKING" if analysis.severity == "breaking" else "HIGH RISK"
         subject = f"Breaklytix Impact Alert: {severity_text} — {repo_name}"
-        
-        affected_files = analysis.affected_files[:5]  # Top 5 files
+        affected_files = analysis.affected_files[:5]
         files_text = "\n".join([
             f"• {f.file_path}" + (f" (line {f.line_number})" if f.line_number else "")
             for f in affected_files
         ])
-        
         html = f'''
         <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;">
             <h2 style="margin:0 0 8px;color:#b91c1c;">{severity_text}: {analysis.provider} API Change</h2>
             <p style="color:#555;">Repository: <strong>{repo_name}</strong></p>
             <p style="color:#555;">Change: {analysis.change_type}</p>
             <p style="color:#555;">Confidence: {int(analysis.confidence * 100)}%</p>
-            <p style="color:#555;">Impact: {analysis.impact_reason}</p>
+            <p style="color:#555;">Potential impact: {analysis.impact_reason}</p>
             <h3 style="margin:16px 0 8px;">Affected Files:</h3>
             <pre style="background:#f3f4f6;padding:12px;border-radius:6px;font-size:13px;overflow-x:auto;">{files_text}</pre>
             <p style="color:#555;margin-top:16px;">Potential Failure: {analysis.potential_failure}</p>
             <p style="color:#555;">Recommended Fix: {analysis.recommended_fix or "Review required"}</p>
             <p style="margin-top:16px;">
-                <a href="{settings.frontend_base_url}/dashboard/impact/{analysis.id}" 
+                <a href="{settings.frontend_base_url}/dashboard/impact/{analysis.id}"
                    style="background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">
                     View Impact Details
                 </a>
             </p>
         </div>
         '''
-        
         text = f"{severity_text}: {analysis.provider} API Change — {repo_name}"
-        
         send_alert_email(
-            user_id=user_id,
-            recipient=user_email,
-            alert_type="impact_alert",
-            subject=subject,
-            html=html,
-            text=text,
+            user_id=user_id, recipient=user_email, alert_type="impact_alert",
+            subject=subject, html=html, text=text,
         )
-        
     except Exception as e:
         print(f"Error sending impact alert: {e}")

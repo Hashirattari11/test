@@ -163,21 +163,10 @@ class Settings(BaseSettings):
 
     @property
     def changelog_sources(self) -> dict[str, str]:
-        """API name -> changelog URL. Phase B providers with monitoring enabled."""
-        return {
-            "stripe": self.stripe_changelog_url,
-            "shopify": self.shopify_changelog_url,
-            "twilio": self.twilio_changelog_url,
-            "sendgrid": self.sendgrid_changelog_url,
-            "github": self.github_changelog_url,
-            "openai": self.openai_changelog_url,
-            "anthropic": self.anthropic_changelog_url,
-            "vercel": self.vercel_changelog_url,
-            "supabase": self.supabase_changelog_url,
-            "firebase": self.firebase_changelog_url,
-            "slack": self.slack_changelog_url,
-            "resend": self.resend_changelog_url,
-        }
+        """Provider id -> official changelog URL for ALL monitored providers (44)."""
+        # Local import keeps config free of app-module cycles at load time.
+        from .changelog.sources import PROVIDER_SOURCES
+        return {p.provider_id: p.changelog_url for p in PROVIDER_SOURCES}
 
     @property
     def plan_limits(self) -> dict[str, int]:

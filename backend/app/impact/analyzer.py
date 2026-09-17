@@ -363,22 +363,27 @@ def _row_to_analysis(row: dict) -> ImpactAnalysis:
 
 
 def _build_impact_reason(provider: str, change_type: str, match_count: int) -> str:
-    """Build human-readable impact reason."""
+    """Build human-readable impact reason.
+
+    User-spec phrasing: matched usage -> "Potential impact detected";
+    no usage -> "No matching repository usage detected". Never implies the
+    user's code is broken (that judgment belongs to the user).
+    """
     if match_count == 0:
-        return f"No {provider} usage detected in repository"
+        return f"No matching repository usage detected"
     
     if change_type == "removed":
-        return f"Repository uses {provider} API that has been removed"
+        return f"Potential impact detected: repository uses {provider} API that has been removed"
     elif change_type == "deprecated":
-        return f"Repository uses {provider} API that is deprecated"
+        return f"Potential impact detected: repository uses {provider} API that is deprecated"
     elif change_type == "renamed":
-        return f"Repository uses {provider} API that has been renamed"
+        return f"Potential impact detected: repository uses {provider} API that has been renamed"
     elif change_type == "endpoint_changed":
-        return f"Repository uses {provider} endpoint that has changed"
+        return f"Potential impact detected: repository uses {provider} endpoint that has changed"
     elif change_type == "auth_changed":
-        return f"Repository uses {provider} authentication that has changed"
+        return f"Potential impact detected: repository uses {provider} authentication that has changed"
     else:
-        return f"Repository uses {provider} API affected by change"
+        return f"Potential impact detected: repository uses {provider} API affected by change"
 
 
 def _build_expected_behavior(change_type: str) -> str:
@@ -394,13 +399,13 @@ def _build_expected_behavior(change_type: str) -> str:
 
 
 def _build_potential_failure(change_type: str, severity: str) -> str:
-    """Build potential failure description."""
+    """Build potential failure description (evidence-based, non-alarmist)."""
     if severity == "breaking":
-        return "Application will likely crash or fail to function"
+        return "Potential impact detected: affected requests may fail or return unexpected results"
     elif severity == "high":
-        return "Critical functionality may be disrupted"
+        return "Potential impact detected: critical functionality may be disrupted"
     elif severity == "medium":
-        return "Some features may be affected"
+        return "Potential impact detected: some features may be affected"
     elif severity == "low":
         return "Minor impact expected"
     else:

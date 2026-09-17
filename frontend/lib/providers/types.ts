@@ -23,6 +23,13 @@ export type ProviderCategory =
 
 export type MonitoringStatus = "supported" | "planned" | "unavailable";
 
+/** Server-reported monitoring health (provider_monitoring_status.status). */
+export type ProviderHealthStatus =
+  | "ACTIVE"
+  | "LIMITED"
+  | "SOURCE_UNAVAILABLE"
+  | "ERROR";
+
 export type ConfidenceLevel = "low" | "medium" | "high";
 
 export type EvidenceType =
@@ -211,4 +218,71 @@ export interface ProviderCoverageEntry {
   monitoringStatus: MonitoringStatus;
   /** Whether this provider has detections in the repo */
   hasDetections: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Provider changelog monitoring types (Phase C — real monitoring)
+// ---------------------------------------------------------------------------
+
+export type ChangelogChangeType =
+  | "BREAKING_CHANGE"
+  | "DEPRECATION"
+  | "API_VERSION_CHANGE"
+  | "ENDPOINT_CHANGE"
+  | "REQUEST_SCHEMA_CHANGE"
+  | "RESPONSE_SCHEMA_CHANGE"
+  | "AUTH_CHANGE"
+  | "SDK_CHANGE"
+  | "MODEL_CHANGE"
+  | "RATE_LIMIT_CHANGE"
+  | "BEHAVIOR_CHANGE"
+  | "SECURITY_CHANGE"
+  | "NEW_FEATURE"
+  | "BUG_FIX"
+  | "OTHER";
+
+export type ChangelogSeverity =
+  | "CRITICAL"
+  | "HIGH"
+  | "MEDIUM"
+  | "LOW"
+  | "INFO"
+  | "UNKNOWN";
+
+export type ChangelogConfidence = "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
+
+export type ChangelogReviewState = "unreviewed" | "reviewed" | "dismissed";
+
+export interface ChangelogEvent {
+  id: string;
+  api_name: string;
+  provider_display?: string | null;
+  title: string;
+  description?: string | null;
+  source_url?: string | null;
+  change_type?: ChangelogChangeType | null;
+  severity?: ChangelogSeverity | null;
+  confidence?: ChangelogConfidence | null;
+  confidence_evidence?: unknown;
+  severity_evidence?: unknown;
+  review_state?: ChangelogReviewState | null;
+  detected_at?: string | null;
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
+  external_id?: string | null;
+  symbols?: string | null;
+}
+
+export interface MonitoringProviderRow {
+  provider_id: string;
+  display_name: string;
+  status: ProviderHealthStatus;
+  source_kind: string;
+  source_url?: string | null;
+  feed_url?: string | null;
+  last_fetch_at?: string | null;
+  last_success_at?: string | null;
+  last_error?: string | null;
+  consecutive_errors?: number | null;
+  last_http_status?: number | null;
 }

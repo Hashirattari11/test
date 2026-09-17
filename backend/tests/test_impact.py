@@ -128,18 +128,23 @@ class TestAnalyzerHelpers(unittest.TestCase):
 
     def test_build_impact_reason_no_match(self):
         reason = _build_impact_reason("stripe", "removed", 0)
-        self.assertIn("No stripe usage", reason)
+        # User spec: "No matching repository usage detected" — never a
+        # message implying the user's code is broken.
+        self.assertIn("No matching repository usage detected", reason)
 
     def test_build_impact_reason_with_match(self):
         reason = _build_impact_reason("stripe", "removed", 2)
         self.assertIn("removed", reason)
+        self.assertIn("Potential impact detected", reason)
 
     def test_build_expected_behavior(self):
         self.assertIn("404", _build_expected_behavior("removed"))
         self.assertIn("fail", _build_expected_behavior("auth_changed").lower())
 
     def test_build_potential_failure(self):
-        self.assertIn("crash", _build_potential_failure("removed", "breaking").lower())
+        # User spec: evidence-based, non-alarmist phrasing; never "will crash".
+        self.assertIn("potential impact detected", _build_potential_failure("removed", "breaking").lower())
+        self.assertNotIn("crash", _build_potential_failure("removed", "breaking").lower())
         self.assertIn("no significant", _build_potential_failure("removed", "safe").lower())
 
 

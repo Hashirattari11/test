@@ -21,11 +21,22 @@ from datetime import datetime, timezone
 from .config import settings
 from .db import db
 from .email_service import category_enabled, send_alert_email
-from .severity import SEVERITY_LABELS, score_severity
+from .severity import score_severity
 from .changelog.matching import match_event_to_detection
 
 # Phase B: events of these types are never alerted on by default.
-NON_ALERT_EVENT_TYPES = {"new_feature", "bug_fix"}
+# Uppercase matches the new classification enum; lowercase retained for any
+# legacy rows that predate the migration.
+NON_ALERT_EVENT_TYPES = {"NEW_FEATURE", "BUG_FIX", "new_feature", "bug_fix"}
+
+# Severity gate (user spec §alert engine):
+#   * CRITICAL / HIGH        -> always emailed (when matched)
+#   * MEDIUM / LOW / INFO    -> emailed only for HIGH-confidence matches
+#   * UNKNOWN                -> never emailed, dashboard-only
+ALWAYS_EMAIL_SEVERITIES = {"CRITICAL", "HIGH"}
+CONDITIONAL_EMAIL_SEVERITIES = {"MEDIUM", "LOW", "INFO"}
+NEVER_EMAIL_SEVERITIES = {"UNKNOWN"}
+NEVER_EMAIL_CONFIDENCES = {"UNKNOWN"}
 
 # Vercel functions cap at 60s (maxDuration). Each event costs several DB
 # round-trips, so a large backlog can exceed the budget. We cap the number of
@@ -85,9 +96,16 @@ def detection_matches(detection: dict, tokens: set[str]) -> bool:
 # ---------------------------------------------------------------------------
 def render_alert_email(repo_name: str, event: dict, detections: list[dict], severity: str = "medium", confidence: str = "medium", brand_name: str | None = None, brand_logo: str | None = None) -> tuple[str, str, str]:
     api_name = event.get("api_name", "API").capitalize()
-    label = SEVERITY_LABELS.get((severity or "medium").lower(), "Medium")
-    prefix = f"[{label}] " if severity in ("critical", "high") else ""
-    subject = f"{prefix}⚠️ {api_name} API change may affect {repo_name}"
+    sev = (severity or "medium").upper()
+    # User-specified subject format (brand is Breaklytix):
+    #   CRITICAL/HIGH -> "[Breaklytix] High-Risk API Change Detected — {Provider}"
+    #   MEDIUM/LOW    -> "[Breaklytix] API Change Notice — {Provider}"
+    if sev in ("CRITICAL", "HIGH"):
+        subject = f"[Breaklytix] High-Risk API Change Detected — {api_name}"
+    elif sev in ("MEDIUM", "LOW", "INFO"):
+        subject = f"[Breaklytix] API Change Notice — {api_name}"
+    else:
+        subject = f"[Breaklytix] API Change — {api_name}"
     source_url = event.get("source_url") or settings.changelog_sources.get(event.get("api_name", ""), "")
     description = event.get("description") or f"A {api_name} API change was detected."
     change_type = (event.get("change_type") or "other").replace("_", " ")
@@ -353,6 +371,21 @@ def _email_repo_alert_group(event: dict, repo: dict, detections: list[dict], cou
         event.get("change_type") or "other",
         [d.get("file_path") or "" for d in detections],
     )
+    # Prefer the event's classification severity/confidence (new enum) when
+    # present; the primer fallback keeps legacy rows working.
+    ev_sev = (event.get("severity") or severity or "unknown").upper()
+    ev_conf = (event.get("confidence") or "unknown").upper()
+
+    # User spec: UNKNOWN severity/confidence are dashboard-only — never emailed.
+    if ev_sev in NEVER_EMAIL_SEVERITIES or ev_conf in NEVER_EMAIL_CONFIDENCES:
+        return False
+    # CONDITIONAL severities (MEDIUM/LOW/INFO) only email on HIGH confidence.
+    if ev_sev in CONDITIONAL_EMAIL_SEVERITIES and ev_conf != "HIGH":
+        return False
+    # Severity may be UNKNOWN or conditional-but-low-confidence -> no email.
+    if ev_sev not in ALWAYS_EMAIL_SEVERITIES and ev_conf != "HIGH":
+        return False
+
     # Phase 5 §2: mirror to Slack (best-effort) before/independent of email.
     _try_slack_alert(repo, event, severity)
 

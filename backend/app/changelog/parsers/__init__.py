@@ -1,44 +1,14 @@
-"""Changelog parsers for Phase B providers."""
-from .stripe import StripeFetcher
-from .shopify import ShopifyFetcher
-from .twilio import TwilioFetcher
-from .sendgrid import SendGridFetcher
-from .github import GitHubFetcher
-from .openai import OpenAIFetcher
-from .anthropic import AnthropicFetcher
-from .vercel import VercelFetcher
-from .supabase import SupabaseFetcher
-from .firebase import FirebaseFetcher
-from .slack import SlackFetcher
-from .resend import ResendFetcher
+"""Provider adapter registry — ALL 44 providers (strict official sources).
 
-__all__ = [
-    "StripeFetcher",
-    "ShopifyFetcher",
-    "TwilioFetcher",
-    "SendGridFetcher",
-    "GitHubFetcher",
-    "OpenAIFetcher",
-    "AnthropicFetcher",
-    "VercelFetcher",
-    "SupabaseFetcher",
-    "FirebaseFetcher",
-    "SlackFetcher",
-    "ResendFetcher",
-]
+FETCHERS maps provider_id -> ProviderAdapter class built from
+changelog/sources.py via the AdapterFactory. There is no generic fallback:
+each provider's adapter uses only its own official source.
+"""
+from __future__ import annotations
 
-# Registry of all Phase B fetchers
-FETCHERS = {
-    "stripe": StripeFetcher,
-    "shopify": ShopifyFetcher,
-    "twilio": TwilioFetcher,
-    "sendgrid": SendGridFetcher,
-    "github": GitHubFetcher,
-    "openai": OpenAIFetcher,
-    "anthropic": AnthropicFetcher,
-    "vercel": VercelFetcher,
-    "supabase": SupabaseFetcher,
-    "firebase": FirebaseFetcher,
-    "slack": SlackFetcher,
-    "resend": ResendFetcher,
-}
+from ..adapters import AdapterFactory
+from ..sources import ALL_PROVIDER_IDS
+
+FETCHERS: dict[str, type] = AdapterFactory.all(list(ALL_PROVIDER_IDS))
+
+__all__ = ["FETCHERS"]

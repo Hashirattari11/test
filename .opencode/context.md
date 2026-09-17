@@ -1,35 +1,57 @@
-# Project Context (COMPACTED 2026-09-14 ~05:42 — ALL USER TASKS COMPLETE)
+# Project Context
 
 ## Environment
-- Frontend: Next.js 14.2.15 (TS) `D:\autofix\frontend` — prod alias frontend-eight-phi-60.vercel.app; repo Hashirattari11/autofix-frontend (frontend@ROOT) synced @42ea7e2
-- Backend: FastAPI py3.12 `D:\autofix\backend` — prod alias backend-virid-ten-43.vercel.app; repo Hashirattari11/autofix-backend (backend@ROOT) synced @f455e4b (was b55bfb9)
-- DB Supabase MCP; win32 PS5.1: no `&&`, `gh api --jq` FAILS (use `| ConvertFrom-Json`), run_background=cmd.exe (no `$env:` — use bash tool for deploys), robocopy exit 0-7 OK, anomaly notices FALSE POSITIVES ignore
-- Git: D:\autofix origin=Hashirattari11/test (WORKFLOW+SECRETS HOME only). Real homes: autofix-frontend + autofix-backend.
+- Python FastAPI backend + TypeScript/Next.js frontend; workdir D:\autofix (git, branch main, origin sync at 3d0233b).
+- win32 / PowerShell 5.1 (no heredoc, no `&&`; use `;` / cmd). run_background uses cmd.exe: `set V=x&& set V2=y&& python f.py`.
+- Python print()+PS redirect = UTF-16LE BOM binary — write temp .py or pass SQL inline.
+- Vercel CLI 58.7.1 (user hashirattari11); **token file: `C:\Users\AAMASH\AppData\Roaming\xdg.data\com.vercel.cli\auth.json`** (len 60). Org team_VajkoNE2yGmuAR89Mm13PZx3.
+- Backend project prj_Zw3MX8LSD6C4I6C4WoknhsHMxzjI (live backend-virid-ten-43.vercel.app); frontend prj_A73XsdB63JtYbfaFrsjrUK9Yhxja (frontend-eight-phi-60.vercel.app). .vercel.bak=backend, .vercel.bak2=frontend, root .vercel=autofix.
+- Supabase MCP tools available (execute_sql, list_tables) for prod DB verification.
 
-## Gates
-- Frontend: `npx tsc --noEmit` + `npm run build` — PASS 82 pages
-- Backend: `$env:PYTHONPATH="D:\autofix\backend"; python -m pytest -q` — 144 passed
-- Deploy SEQUENTIAL via bash tool: `$env:VERCEL_ORG_ID="team_VajkoNE2yGmuAR89Mm13PZx3"` + `$env:VERCEL_PROJECT_ID` (backend prj_Zw3MX8LSD6C4I6C4WoknhsHMxzjI / frontend prj_A73XsdB63JtYbfaFrsjrUK9Yhxja) then `vercel deploy --prod --yes` from folder. Root .vercel renamed .vercel.bak2 — KEEP. Never run_background a deploy ($env: fails in cmd.exe).
+## MISSION (44-provider real changelog monitoring M1-M8)
+- 44 ids: stripe, shopify, twilio, sendgrid, github, openai, anthropic, paypal, resend, slack, supabase, firebase, aws, vercel, cloudinary, googleai, huggingface, elevenlabs, postmark, mailgun, digitalocean, sentry, auth0, clerk, mapbox, algolia, posthog, mixpanel, segment, intercom, discord, telegram, whatsapp, twitter, zoom, pusher, youtube, notion, airtable, mongodb, redis, plaid, openweather, serpapi.
+- Brand: user spec `[AutoFix API]` → product `[Breaklytix]` (flag in final report).
+- Source kinds: RSS (shopify, github), GITHUB_RELEASES (sentry, redis), HTML_STRICT (others; stripe feed.rss fictional 404 → HTML_STRICT honest 0 → LIMITED).
+- Enums: change_type 15; severity CRITICAL/HIGH/MEDIUM/LOW/INFO/UNKNOWN; confidence HIGH/MEDIUM/LOW/UNKNOWN; review_state unreviewed/reviewed/dismissed.
+- No-fabrication: RawEntry requires external_id+title+url+published_at; 60d lookback; undated/boilerplate dropped → LIMITED.
+- Alerts: always-email CRITICAL/HIGH; MEDIUM/LOW/INFO only HIGH confidence; UNKNOWN never. Subjects `[Breaklytix] High-Risk API Change Detected — {P}` / `[Breaklytix] API Change Notice — {P}`.
+- Impact phrasing: "Potential impact detected: …" / "No matching repository usage detected"; NEVER "crash"/"will crash".
 
-## ALL TASKS COMPLETE (user approved "karo complete")
-1. **Connect-repo hang FIXED** — repos.py connect_repo → async `start_scan(id, full_name, default_branch, token)` (not sync scan_repo). Deployed dpl_HRXWzPLNqWNutfwSS97PzFmXgK8P; live /repos→401, /docs→200.
-2. **Responsive pass** — repos/page.tsx (minWidth→flex 1 1 0; buttons flexWrap; modal clamp padding), repos/[id]/page.tsx (footprint table +responsive-cards +data-labels; expanded td data-label=""), agency/page.tsx (invite grid auto-fit minmax(200px,1fr)), globals.css safety net appended END (img/svg/video max-width 100%; pre/code overflow-x; html,body overflow-x hidden; td[data-label=""]::before display none; ≤640px inline grid collapse 1fr !important + page-header/mc-panel h3 wrap). Deployed dpl_HJCsk1TrYRzGKVaJuyxhwam51MQ9 → frontend-grk0qtu2t; live repos/login/root/agency 200. Pushed 42ea7e2.
-3. **Backend repo sync** — remote b55bfb9 was a DIFFERENT lineage (user pushed granular Sep 8 history; local = single "production ready" commit lineage w/ newer routers impact/consent/notifications + deployed state). Did NOT blindly overwrite: verified route inventories (local has /incidents, /provider-connections CRUD; remote had /providers, /usage/{id}, repo-free collect, /provider/{provider} — evolved/replaced), only forecast.py genuinely obsolete (no imports). Synced local→remote as commit f455e4b (preserved .env.example; dropped forecast.py). `b55bfb9..f455e4b main -> main` PUSHED. NOTE: remote-only files kept where useful; git history preserves everything.
-4. **Daily digest enabled** — `UPDATE users SET notify_daily_status=true WHERE id='3d206f17-...'` → owner hashirattari73@gmail.com now notify_email_alerts=true, notify_daily_status=true. Emails now send daily (not just when issues found).
-5. Temp clones cleaned.
+## ⚠️ INCIDENT + RECOVERY (2026-09-17) — READ CAREFULLY
+- ROOT CAUSE: `cmd /c "rmdir /s /q D:\autofix\backend\$null"` — PS expanded `$null`→empty → cmd got `D:\autofix\backend\` → DELETED ENTIRE backend/.
+- STEP 1 DONE: `git restore --worktree backend/` → tracked files back to HEAD (PRE-mission state).
+- STEP 2 DONE — RECOVERED MISSION CODE FROM VERCEl DEPLOYMENT:
+  - **File-content API is `/v8/deployments/{id}/files/{fileId}`** → `{"data":"<base64>"}`. (v13 list works; content NOT v13.)
+  - Dep: **dpl_Dpbta9WELtUKuCHSzVfeaLgJNnNc** = backend-m7a2r4kho-hashirattari11s-projects.vercel.app (latest prod, created 02:20).
+  - Downloader script: `C:\Users\AAMASH\AppData\Local\Temp\opencode\vercel_fetch.ps1` (walks v13 tree, fetches v8 base64, decodes → `C:\Users\AAMASH\AppData\Local\Temp\opencode\vercel_restore\src\...`). 119/120 ok (only out/api/index.py build-artifact failed — irrelevant).
+  - Copied BACK to D:\autofix\backend: app/, api/, tests/, scripts/, migrations/, requirements.txt, vercel.json, .env, .env.example, CRON.md, Dockerfile, render.yaml (src .gitignore absent — fine). Legacy 13 parsers gone (parsers/ = __init__.py only). All mission files verified present: sources.py 13822B, adapters.py 4122B, classify.py 11033B, fingerprint.py 1362B, scheduler.py 22821B, router.py 10592B, base.py 12497B, config.py 8886B, alerts.py 21990B, impact/analyzer.py 14524B, tests/test_changelog_monitoring.py 10687B, tests/test_impact.py 8656B, requirements.txt, vercel.json, api/index.py 132B, .env 2701B.
 
-## Infrastructure facts (stable, do not re-verify unless asked)
-- GH Action workflow `stripe-changelog-cron.yml` lives ONLY in test repo (e2bfb2e, curls have -L); cron 06:00 UTC: fetch→process→daily-scan. Secrets: BACKEND_URL=https://backend-virid-ten-43.vercel.app; INTERNAL_SECRET value = see GH Actions secrets on test repo (do NOT write the literal value into public files).
-- Backend auth: X-Internal-Secret header = settings.cron_secret = CRON_SECRET or INTERNAL_SECRET (deps.py L70-77). Verified E2E live 09-14 (run 34837416096 SUCCESS; 2× daily_status emails SENT 200).
-- Owner id 3d206f17-7abc-4857-be29-00c8406ce16f (hashirattari73@gmail.com). Demo 85c03e20-6557-4df7-8c4a-7d72d7a55f37. Resend sandbox: non-owner 403 until domain verified.
+## ⚠️ CRITICAL FINDING — deployed snapshot is PRE-FIX
+The recovered scheduler.py is the OLD version shipped to prod. Still to RE-APPLY (rewrite on disk now):
+1. **duration_ms bug** (scheduler.py L204-207): `duration_ms = int((_time.time() - _time.time()) * 0) or 1` → always 1. Fix: `_work` returns duration; compute `int((now - start) * 1000)`.
+2. **No `_db_retry`** anywhere in repo (grep: 0). Add helper (3 attempts, backoff, retry on "Server disconnected"/connection errors) wrapping DB calls (or at least store/_update_status).
+3. **store_entries is per-entry 3 queries** (old): select by external_id, select by fingerprint, then update/insert (L57-122). Optimize to ONE bulk lookup per provider (select ids where api_name=provider and external_id in (...) and fingerprint in (...)).
+4. **No env-tunable budget**: L30-32 hardcoded FETCH_TIMEOUT_SECONDS=12, FETCH_MAX_WORKERS=4, TOTAL_BUDGET_SECONDS=25 — make os.getenv with those defaults.
+5. **fetched count in per-provider result**: _fetch_with_timeout returns entries; results should include fetched=len(entries) (currently stats only has stored/duplicates/skipped/errors).
+6. **23505 unique violation** = duplicate (catch IntegrityError/lookup in insert path → count duplicate not error).
+7. **_update_status silent pass on error** — should print failures (check current L125-160).
+- test impact of fixes: shopify store 47s→16s expectation; duration_ms column real values in provider_monitoring_status.
 
-## Key Files (current production state)
-- backend/app/routers/repos.py (async connect), backend/app/engine/scanner/runner.py
-- backend/vercel.json (maxDuration 60), app/main.py, app/health/* (no forecast.py)
-- frontend/app/globals.css (safety net END), premium.css, dashboard/repos/*, agency/page.tsx
-- frontend/lib/api.ts, lib/auth.ts
+## Other verification to redo (post-restore)
+- tests: earlier reviewer run showed **166 passed + 2 FAILED in test_impact.py** (`test_build_impact_reason_no_match` expects "No stripe usage" but code says "No matching repository usage detected"; `test_build_potential_failure` expects "crash"). Restored test_impact.py likely has STALE assertions → align to NEW phrasing (update the 2 assertions to match analyzer.py; do NOT regress analyzer).
+- test_default_status_map: stripe must be LIMITED (default map) — confirm in restored test_changelog_monitoring.py.
+- Run `python -m pytest tests -q` in D:\autofix\backend (PYTHONPATH) → target 168 passed.
+- Frontend SURVIVED intact (changelog pages, providers/ dir, lib/api.ts, types.ts). Run `npx tsc --noEmit` then `npm run build` in D:\autofix\frontend.
+- Prod DB intact (Supabase): verify matrix 7 ACTIVE (clerk, github, redis, sentry, serpapi, shopify, slack) / 2 ERROR (telegram net-block, segment 403) / 35 LIMITED = 44 rows; real events shopify 43, redis 18, github 10, slack 8, clerk 6, sentry 4, serpapi; dedup 0 dups (api_name,external_id).
 
-## PENDING (only user-actionable)
-- Owner browser test: connect repo live (should return instantly now) + mobile viewport check of dashboard pages.
-- RESEND_FROM_EMAIL verified sender for real emails (sandbox blocks non-owner).
-- Stripe live keys if billing activated.
+## Verification facts pre-incident (still valid for DB/live)
+- 168 pytest passed (incl 24 new changelog tests); frontend tsc+build exit 0; matrix 7/2/35 live; /internal/changelog/health|monitoring|events → 401 without creds (guards active; deployed INTERNAL_SECRET ≠ local .env secret — live internal probes blocked, local-fetch-against-prod-DB was the verification path).
+- 15 URL fixes (all 200): stripe→docs.stripe.com/changelog, paypal→developer.paypal.com/api/rest/, plaid, sendgrid, whatsapp, zoom, pusher, postmark, mailgun, cloudinary, mixpanel, intercom, algolia, mapbox, notion, openweather, serpapi (blog URLs). Stripe = HTML_STRICT.
+
+## READ FIRST next session
+- .opencode/todo.md (checkbox state), work-log.md, status.md. This file is authoritative for incident state.
+
+## Current Status
+- backend/ = recovered mission code (pre-fix scheduler); git sees: backend restored-to-HEAD files now differ from deployment snapshot? NO — git status should show unstaged deletions/modifications vs HEAD for all new mission files (expected; HEAD is pre-mission). DO NOT git restore again. Commit AFTER fixes+tests pass.
+- TODO now: re-apply scheduler fixes, fix stale test_impact assertions, run full pytest (168), frontend tsc/build, optionally redeploy backend so fixed code is live (current prod = pre-fix! if fixes were desired live; note Vercel cron runs the pre-fix code today).
+- Pending: final report (REPORT_44_PROVIDER_MONITORING.md), commits (backend+frontend+migrations; never commit secrets), Reviewer final verification + mark M8 todos [x], conclude.

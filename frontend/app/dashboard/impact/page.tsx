@@ -90,7 +90,7 @@ export default function ImpactPage() {
     <div>
       <h1 style={{ marginBottom: 4 }}>Impact Engine</h1>
       <p className="muted" style={{ marginTop: 0 }}>
-        What exactly will break in your code if a third-party API changes?{" "}
+        How could third-party API changes affect your code?{" "}
         <Link href="/docs/impact-overview" style={{ textDecoration: "none" }}>Learn more</Link>
       </p>
 

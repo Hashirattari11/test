@@ -1,5 +1,11 @@
 // Typed client for the Breaklytix FastAPI backend.
 import { clearSession, ensureSession, getToken, User } from "./auth";
+import type {
+  ChangelogEvent,
+  MonitoringProviderRow,
+} from "./providers/types";
+
+export type { ChangelogEvent, MonitoringProviderRow } from "./providers/types";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 export const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID || "";
@@ -307,6 +313,55 @@ export type ChangelogNotice = {
 
 export const getChangelogNotices = () =>
   request<{ notices: ChangelogNotice[] }>("/internal/changelog/notices");
+
+// ---- Provider Changelog Events (real monitoring, all 44 providers) ---------
+
+export type ProviderEventFilter = {
+  provider?: string;
+  change_type?: string;
+  severity?: string;
+  confidence?: string;
+  review_state?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export const getProviderEvents = (filters: ProviderEventFilter = {}) => {
+  const params = new URLSearchParams();
+  if (filters.provider) params.set("provider", filters.provider);
+  if (filters.change_type) params.set("change_type", filters.change_type);
+  if (filters.severity) params.set("severity", filters.severity);
+  if (filters.confidence) params.set("confidence", filters.confidence);
+  if (filters.review_state) params.set("review_state", filters.review_state);
+  if (filters.limit) params.set("limit", String(filters.limit));
+  if (filters.offset) params.set("offset", String(filters.offset));
+  const qs = params.toString();
+  return request<{ events: ChangelogEvent[] }>(
+    `/internal/changelog/events${qs ? `?${qs}` : ""}`
+  );
+};
+
+export const getProviderEvent = (eventId: string) =>
+  request<{ event: ChangelogEvent; alerts: unknown[] }>(
+    `/internal/changelog/events/${eventId}`
+  );
+
+export const getMonitoringMatrix = () =>
+  request<{ providers: MonitoringProviderRow[] }>(
+    "/internal/changelog/monitoring"
+  );
+
+export const reviewProviderEvent = (eventId: string) =>
+  request<{ updated: boolean }>(
+    `/internal/changelog/events/${eventId}/review`,
+    { method: "POST" }
+  );
+
+export const dismissProviderEvent = (eventId: string) =>
+  request<{ updated: boolean }>(
+    `/internal/changelog/events/${eventId}/dismiss`,
+    { method: "POST" }
+  );
 
 export function connectRepo(body: {
   github_repo_id: string;

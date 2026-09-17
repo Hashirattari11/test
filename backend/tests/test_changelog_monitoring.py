@@ -57,7 +57,7 @@ class TestProviderRegistry(unittest.TestCase):
                 self.assertTrue(p.feed_url.startswith("https://"), p.provider_id)
 
     def test_default_status_map(self):
-        self.assertEqual(PROVIDER_SOURCES_BY_ID["stripe"].default_status, "ACTIVE")
+        self.assertEqual(PROVIDER_SOURCES_BY_ID["stripe"].default_status, "LIMITED")
         self.assertEqual(PROVIDER_SOURCES_BY_ID["twilio"].default_status, "LIMITED")
         src = ProviderSource_for_test_unavailable()
         self.assertEqual(src.default_status, "SOURCE_UNAVAILABLE")

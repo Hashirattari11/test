@@ -1,0 +1,330 @@
+﻿python : C:\Users\AAMASH\AppData\Local\Programs\Python\Python312\Lib\html\parser.py:171: XMLParsedAsHTMLWarning: It 
+looks like you're parsing an XML document using an HTML parser. If this really is an HTML document (maybe it's 
+XHTML?), you can ignore or filter this warning. If it's XML, you should know that using an XML parser will be more 
+reliable. To parse this document as XML, make sure you have the lxml package installed, and pass the keyword argument 
+`features="xml"` into the BeautifulSoup constructor.
+At line:1 char:133
++ ... ONDS="120"; python "C:\Users\AAMASH\AppData\Local\Temp\opencode\fetch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\AAMASH...up constructor.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  k = self.parse_starttag(i)
+Touch clerk https://clerk.com/changelog/changelog/2026-08-28-customize-reverification-window: EOF occurred in violation of protocol (_ssl.c:2427)
+Touch shopify https://shopify.dev/changelog/filter-catalog-search-results-by-media-type: EOF occurred in violation of protocol (_ssl.c:2427)
+Bulk dedup lookup failed for serpapi: EOF occurred in violation of protocol (_ssl.c:2427)
+Touch slack https://api.slack.com/changelog/changelog/2026/09/15/slack-cli: EOF occurred in violation of protocol (_ssl.c:2427)
+Touch sentry 389336793: EOF occurred in violation of protocol (_ssl.c:2427)
+Bulk dedup lookup failed for redis: EOF occurred in violation of protocol (_ssl.c:2427)
+Touch github https://github.blog/changelog/2026-09-16-scim-user-responses-now-include-a-profileurl-attribute: EOF occurred in violation of protocol (_ssl.c:2427)
+Status update failed for plaid: EOF occurred in violation of protocol (_ssl.c:2427)
+{
+ "sendgrid": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "paypal": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "ERROR",
+  "err": "paypal: GET https://developer.paypal.com/api/release-notes/ "
+ },
+ "resend": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "plaid": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "twilio": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "twitter": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "whatsapp": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "zoom": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "stripe": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "mailgun": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "pusher": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "postmark": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "vercel": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "discord": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "cloudinary": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "aws": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "digitalocean": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "googleai": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "huggingface": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "openai": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "anthropic": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "firebase": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "segment": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "ERROR",
+  "err": "segment: GET https://segment.com/docs/changelog/ failed: 403"
+ },
+ "intercom": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "mixpanel": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "posthog": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "elevenlabs": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "algolia": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "auth0": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "mapbox": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "telegram": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "ERROR",
+  "err": "telegram: GET https://core.telegram.org/bots/api failed: HTT"
+ },
+ "supabase": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "airtable": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "mongodb": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "notion": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "openweather": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "youtube": {
+  "stored": 0,
+  "duplicates": 0,
+  "fetched": 0,
+  "status": "LIMITED",
+  "err": null
+ },
+ "clerk": {
+  "stored": 0,
+  "duplicates": 6,
+  "fetched": 6,
+  "status": "ACTIVE",
+  "err": null
+ },
+ "sentry": {
+  "stored": 0,
+  "duplicates": 4,
+  "fetched": 4,
+  "status": "ACTIVE",
+  "err": null
+ },
+ "slack": {
+  "stored": 0,
+  "duplicates": 8,
+  "fetched": 8,
+  "status": "ACTIVE",
+  "err": null
+ },
+ "github": {
+  "stored": 0,
+  "duplicates": 10,
+  "fetched": 10,
+  "status": "ACTIVE",
+  "err": null
+ },
+ "serpapi": {
+  "stored": 0,
+  "duplicates": 9,
+  "fetched": 9,
+  "status": "ACTIVE",
+  "err": null
+ },
+ "redis": {
+  "stored": 0,
+  "duplicates": 18,
+  "fetched": 18,
+  "status": "ACTIVE",
+  "err": null
+ },
+ "shopify": {
+  "stored": 0,
+  "duplicates": 43,
+  "fetched": 43,
+  "status": "ACTIVE",
+  "err": null
+ }
+}

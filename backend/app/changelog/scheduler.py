@@ -284,12 +284,12 @@ def fetch_all_providers(user_agent: str | None = None) -> dict:
         pool.shutdown(wait=False, cancel_futures=True)
 
     # Pending (budget expired) — truthful timed_out, never silently dropped.
+    # IMPORTANT: do NOT downgrade the persisted status to ERROR — budget expiry
+    # is not a provider failure; keep the last completed fetch status intact.
     for future in pending:
         pid = futures[future]
         results.setdefault(pid, {"fetched": 0, "stored": 0, "duplicates": 0, "skipped": 0,
-                                 "errors": 1, "timed_out": True, "status": STATUS_ERROR})
-        _update_status(pid, STATUS_ERROR, fetched=0, duration_ms=0,
-                       error="timed out inside cron budget")
+                                 "errors": 0, "timed_out": True, "status": STATUS_ERROR})
 
     # Providers with no source at all: mark SOURCE_UNAVAILABLE.
     for pid in provider_ids:

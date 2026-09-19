@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import RepositorySelector from "../../../../components/RepositorySelector";
 import { getHealthFailures, HealthIssue, updateHealthIssueStatus } from "../../../../lib/api";
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -12,6 +14,8 @@ const SEVERITY_COLOR: Record<string, string> = {
 };
 
 export default function FailuresPage() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
   const [summary, setSummary] = useState<{ total: number; customer_code: number; provider_incident: number }>({
     total: 0,
@@ -21,9 +25,17 @@ export default function FailuresPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
+    if (!repositoryId) {
+      // Never silently show ALL repositories' data before a repo is selected.
+      setIssues([]);
+      setSummary({ total: 0, customer_code: 0, provider_incident: 0 });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    getHealthFailures(500)
+    setIssues([]); // clear previous repository's results while loading
+    getHealthFailures(500, repositoryId)
       .then((res) => {
         setIssues(Array.isArray(res.failures) ? res.failures : []);
         setSummary({ total: res.total, customer_code: res.customer_code, provider_incident: res.provider_incident });
@@ -33,9 +45,9 @@ export default function FailuresPage() {
         setSummary({ total: 0, customer_code: 0, provider_incident: 0 });
       })
       .finally(() => setLoading(false));
-  };
+  }, [repositoryId]);
 
-  useEffect(load, []);
+  useEffect(load, [load]);
 
   const failures = useMemo(
     () => issues.filter((i) => i.category === "customer_code" || i.category === "provider_incident"),
@@ -59,14 +71,17 @@ export default function FailuresPage() {
   return (
     <div>
       <h1>Runtime &amp; Usage Intelligence · Failures</h1>
-      <p className="subtitle">Code-side failures and provider incidents affecting your repos</p>
+      <p className="subtitle">Code-side failures and provider incidents — scoped to the selected repository</p>
+      <div style={{ margin: "12px 0" }}>
+        <RepositorySelector />
+      </div>
       <p style={{ color: "var(--muted)", fontSize: 13, marginTop: -8 }}>
         {summary.total} open failure{summary.total !== 1 ? "s" : ""} · {summary.customer_code} code-side · {summary.provider_incident} provider
       </p>
 
       {failures.length === 0 ? (
         <div className="empty-state">
-          <p>No failures recorded.</p>
+          <p>No failures recorded for this repository.</p>
         </div>
       ) : (
         <div className="issues-list">

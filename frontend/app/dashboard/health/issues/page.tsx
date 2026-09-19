@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import RepositorySelector from "../../../../components/RepositorySelector";
 import { apiFetch } from "../../../../lib/api";
 
 interface Issue {
@@ -46,27 +48,48 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function IssuesPage() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [severity, setSeverity] = useState("");
   const [category, setCategory] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setIssues([]); // clear previous view's results while loading
     const params = new URLSearchParams({ status: "open" });
     if (severity) params.set("severity", severity);
     if (category) params.set("category", category);
+    if (repositoryId) params.set("repository_id", repositoryId);
     apiFetch(`/health/issues?${params}`)
       .then((res: any) => setIssues(Array.isArray(res) ? res : res.issues || []))
       .catch(() => setIssues([]))
       .finally(() => setLoading(false));
-  }, [severity, category]);
+  }, [severity, category, repositoryId]);
+
+  useEffect(load, [load]);
+
+  // Aggregate "All Repositories" view: group by repository identity so results
+  // are never flattened into one anonymous mixed list.
+  const grouped: Record<string, Issue[]> = {};
+  for (const issue of issues) {
+    const key = issue.repo_full_name || issue.repo_id || "Unknown repository";
+    (grouped[key] ??= []).push(issue);
+  }
 
   if (loading) return <div className="loading">Loading issues...</div>;
 
   return (
     <div className="issues-page">
       <h1>Reliability Issues</h1>
-      <p className="subtitle">All open issues across your repositories</p>
+      <p className="subtitle">
+        {repositoryId ? "Open issues scoped to the selected repository" : "All open issues, grouped by repository"}
+      </p>
+
+      <div style={{ margin: "12px 0" }}>
+        <RepositorySelector allowAll />
+      </div>
 
       <div className="filters">
         <select value={severity} onChange={(e) => setSeverity(e.target.value)}>
@@ -90,52 +113,71 @@ export default function IssuesPage() {
 
       {issues.length === 0 ? (
         <div className="empty-state">
-          <p>No open issues found.</p>
+          <p>{repositoryId ? "No open issues for this repository." : "No open issues found."}</p>
           <Link href="/dashboard/health" className="btn btn-primary">
             Back to Health Dashboard
           </Link>
         </div>
-      ) : (
+      ) : repositoryId ? (
         <div className="issues-list">
           {issues.map((issue) => (
-            <div key={issue.id} className="issue-card">
-              <div className="issue-header">
-                <span className="issue-severity" style={{ color: SEVERITY_COLORS[issue.severity] || "#6b7280" }}>
-                  {issue.severity.toUpperCase()}
-                </span>
-                {issue.risk_level && (
-                  <span
-                    className={`issue-risk risk-${issue.risk_level}`}
-                    title={issue.risk_factors?.join(", ") || "Explainable risk score"}
-                  >
-                    Risk {issue.risk_level}
-                    {typeof issue.risk_score === "number" ? ` · ${issue.risk_score}` : ""}
-                  </span>
-                )}
-                <span className="issue-category">{CATEGORY_LABELS[issue.category] || issue.category}</span>
-                <span className="issue-provider">{issue.provider}</span>
-                {issue.repo_full_name && (
-                  <span className="issue-provider" style={{ opacity: 0.7 }}>{issue.repo_full_name}</span>
-                )}
-              </div>
-              <h3 className="issue-title">{issue.title}</h3>
-              <p className="issue-description">{issue.description}</p>
-              {issue.file && (
-                <p className="issue-location">
-                  File: {issue.file}{issue.line ? `:${issue.line}` : ""}
-                </p>
-              )}
-              <div className="issue-footer">
-                <span className="issue-confidence">Confidence: {(issue.confidence * 100).toFixed(0)}%</span>
-                {issue.auto_fix_available && <span className="issue-fix-badge">Auto-fix available</span>}
-                <span className="issue-source">Source: {issue.source}</span>
-              </div>
-              {issue.recommended_action && (
-                <p className="issue-action">Recommended: {issue.recommended_action}</p>
-              )}
-            </div>
+            <IssueCard key={issue.id} issue={issue} />
           ))}
         </div>
+      ) : (
+        Object.entries(grouped).map(([repoName, repoIssues]) => (
+          <section key={repoName} style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: 17, margin: "18px 0 8px" }}>
+              Repository: {repoName} <span className="muted small">({repoIssues.length})</span>
+            </h2>
+            <div className="issues-list">
+              {repoIssues.map((issue) => (
+                <IssueCard key={issue.id} issue={issue} />
+              ))}
+            </div>
+          </section>
+        ))
+      )}
+    </div>
+  );
+}
+
+function IssueCard({ issue }: { issue: Issue }) {
+  return (
+    <div className="issue-card">
+      <div className="issue-header">
+        <span className="issue-severity" style={{ color: SEVERITY_COLORS[issue.severity] || "#6b7280" }}>
+          {issue.severity.toUpperCase()}
+        </span>
+        {issue.risk_level && (
+          <span
+            className={`issue-risk risk-${issue.risk_level}`}
+            title={issue.risk_factors?.join(", ") || "Explainable risk score"}
+          >
+            Risk {issue.risk_level}
+            {typeof issue.risk_score === "number" ? ` · ${issue.risk_score}` : ""}
+          </span>
+        )}
+        <span className="issue-category">{CATEGORY_LABELS[issue.category] || issue.category}</span>
+        <span className="issue-provider">{issue.provider}</span>
+        {issue.repo_full_name && (
+          <span className="issue-provider" style={{ opacity: 0.7 }}>{issue.repo_full_name}</span>
+        )}
+      </div>
+      <h3 className="issue-title">{issue.title}</h3>
+      <p className="issue-description">{issue.description}</p>
+      {issue.file && (
+        <p className="issue-location">
+          File: {issue.file}{issue.line ? `:${issue.line}` : ""}
+        </p>
+      )}
+      <div className="issue-footer">
+        <span className="issue-confidence">Confidence: {(issue.confidence * 100).toFixed(0)}%</span>
+        {issue.auto_fix_available && <span className="issue-fix-badge">Auto-fix available</span>}
+        <span className="issue-source">Source: {issue.source}</span>
+      </div>
+      {issue.recommended_action && (
+        <p className="issue-action">Recommended: {issue.recommended_action}</p>
       )}
     </div>
   );

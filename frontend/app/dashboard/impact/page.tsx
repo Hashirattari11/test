@@ -1,17 +1,16 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   getImpactSummary,
   ImpactSummary,
-  listRepos,
-  Repo,
   getImpactAnalyses,
   ImpactAnalysis,
   runFireDrill,
-  analyzeChangelogEvent,
 } from "../../../lib/api";
+import RepositorySelector from "../../../components/RepositorySelector";
 import { Badge, severityTone, timeAgo } from "../../../components/dashboard-ui";
 import { Spinner } from "../../../components/ui";
 
@@ -25,9 +24,9 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 export default function ImpactPage() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [summary, setSummary] = useState<ImpactSummary | null>(null);
-  const [repos, setRepos] = useState<Repo[]>([]);
-  const [selectedRepo, setSelectedRepo] = useState("");
   const [analyses, setAnalyses] = useState<ImpactAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [analysesLoading, setAnalysesLoading] = useState(false);
@@ -36,40 +35,51 @@ export default function ImpactPage() {
   const [drillResult, setDrillResult] = useState<ImpactAnalysis | null>(null);
   const [drillError, setDrillError] = useState("");
 
-  useEffect(() => {
-    Promise.all([getImpactSummary().catch(() => null), listRepos()])
-      .then(([s, r]) => {
-        setSummary(s);
-        setRepos(r || []);
-      })
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  }, []);
+  const loadSummary = useCallback(() => {
+    if (!repositoryId) {
+      setSummary(null);
+      // Keep the return type a Promise so .catch()/.finally() below typecheck.
+      return Promise.resolve();
+    }
+    return getImpactSummary(repositoryId).catch(() => null).then(setSummary);
+  }, [repositoryId]);
 
   useEffect(() => {
-    if (!selectedRepo) {
+    setLoading(true);
+    if (!repositoryId) {
+      setLoading(false);
+      return;
+    }
+    setSummary(null);
+    loadSummary()
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, [repositoryId, loadSummary]);
+
+  useEffect(() => {
+    if (!repositoryId) {
       setAnalyses([]);
       return;
     }
     setAnalysesLoading(true);
-    getImpactAnalyses(selectedRepo, 20)
+    setAnalyses([]); // clear previous repository's results while loading
+    getImpactAnalyses(repositoryId, 20)
       .then((res) => setAnalyses(res.analyses || []))
       .catch(() => setAnalyses([]))
       .finally(() => setAnalysesLoading(false));
-  }, [selectedRepo]);
+  }, [repositoryId]);
 
   const runDrill = async () => {
-    if (!selectedRepo || !drillProvider.trim() || drillRunning) return;
+    if (!repositoryId || !drillProvider.trim() || drillRunning) return;
     setDrillRunning(true);
     setDrillError("");
     setDrillResult(null);
     try {
-      const result = await runFireDrill(selectedRepo, drillProvider.trim().toLowerCase());
+      const result = await runFireDrill(repositoryId, drillProvider.trim().toLowerCase());
       setDrillResult(result);
       // Refresh summary + analyses after drill
-      const [s] = await Promise.all([getImpactSummary().catch(() => null)]);
-      if (s) setSummary(s);
-      const res = await getImpactAnalyses(selectedRepo, 20).catch(() => null);
+      loadSummary();
+      const res = await getImpactAnalyses(repositoryId, 20).catch(() => null);
       if (res) setAnalyses(res.analyses || []);
     } catch (e) {
       setDrillError(String(e));
@@ -94,7 +104,11 @@ export default function ImpactPage() {
         <Link href="/docs/impact-overview" style={{ textDecoration: "none" }}>Learn more</Link>
       </p>
 
-      {/* Summary cards */}
+      <div style={{ margin: "16px 0" }}>
+        <RepositorySelector />
+      </div>
+
+      {/* Summary cards (scoped to the selected repository) */}
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, margin: "24px 0" }}>
         <SummaryCard label="Total Analyses" value={summary ? String(summary.total_analyses) : "—"} />
         <SummaryCard label="Affected Repos" value={summary ? String(summary.affected_repos) : "—"} />
@@ -108,12 +122,12 @@ export default function ImpactPage() {
         ))}
       </div>
 
-      {/* Recent analyses */}
+      {/* Recent analyses (scoped) */}
       <section className="card" style={{ padding: 0, marginTop: 20 }}>
         <div style={{ padding: "16px 20px 0" }}>
           <h2 style={{ marginBottom: 4 }}>Recently Detected Changes</h2>
           <p className="muted small" style={{ marginTop: 0 }}>
-            Impact analyses from detected provider changes.
+            Impact analyses from detected provider changes, scoped to this repository.
           </p>
         </div>
         {summary && summary.recent_analyses.length > 0 ? (
@@ -149,30 +163,19 @@ export default function ImpactPage() {
           </table>
         ) : (
           <div className="empty" style={{ padding: 24 }}>
-            No impact analyses yet. Select a repository and run a Fire Drill.
+            No impact analyses for this repository yet. Run a Fire Drill below.
           </div>
         )}
       </section>
 
-      {/* Fire Drill */}
+      {/* Fire Drill (scoped to the selected repository) */}
       <section className="card" style={{ padding: 20, marginTop: 20 }}>
         <h2 style={{ marginBottom: 4 }}>API Fire Drill</h2>
         <p className="muted small" style={{ marginTop: 0 }}>
-          Before deployment, analyze a repository against known third-party API changes.
+          Before deployment, analyze the selected repository against known third-party API changes.
           Answer: "Is this deployment likely to break because of an external API?"
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-          <select
-            className="input"
-            value={selectedRepo}
-            onChange={(e) => setSelectedRepo(e.target.value)}
-            style={{ minWidth: 200 }}
-          >
-            <option value="">Select repository…</option>
-            {repos.map((r) => (
-              <option key={r.id} value={r.id}>{r.full_name}</option>
-            ))}
-          </select>
           <input
             className="input"
             placeholder="Provider (e.g. stripe, openai)"
@@ -183,7 +186,7 @@ export default function ImpactPage() {
           <button
             className="btn btn-primary"
             onClick={runDrill}
-            disabled={!selectedRepo || !drillProvider.trim() || drillRunning}
+            disabled={!repositoryId || !drillProvider.trim() || drillRunning}
           >
             {drillRunning ? "Running drill…" : "Run Fire Drill"}
           </button>
@@ -219,8 +222,8 @@ export default function ImpactPage() {
         )}
       </section>
 
-      {/* Repo analyses */}
-      {selectedRepo && (
+      {/* Repo analyses (scoped) */}
+      {repositoryId && (
         <section className="card" style={{ padding: 0, marginTop: 20 }}>
           <div style={{ padding: "16px 20px 0" }}>
             <h2 style={{ marginBottom: 4 }}>Analyses for Selected Repo</h2>

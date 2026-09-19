@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import RepositorySelector from "../../../../components/RepositorySelector";
 import {
   createIssueFix,
   getHealthErrors,
@@ -18,6 +20,8 @@ const SEVERITY_COLOR: Record<string, string> = {
 };
 
 export default function ErrorsPage() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
   const [summary, setSummary] = useState<{ total: number; critical: number; high: number }>({
     total: 0,
@@ -27,9 +31,17 @@ export default function ErrorsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
+    if (!repositoryId) {
+      // No repository selected yet — never silently show ALL repositories' data.
+      setIssues([]);
+      setSummary({ total: 0, critical: 0, high: 0 });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    getHealthErrors(500)
+    setIssues([]); // clear previous repository's results while loading
+    getHealthErrors(500, repositoryId)
       .then((res) => {
         setIssues(Array.isArray(res.errors) ? res.errors : []);
         setSummary({ total: res.total, critical: res.critical, high: res.high });
@@ -39,9 +51,9 @@ export default function ErrorsPage() {
         setSummary({ total: 0, critical: 0, high: 0 });
       })
       .finally(() => setLoading(false));
-  };
+  }, [repositoryId]);
 
-  useEffect(load, []);
+  useEffect(load, [load]);
 
   const errors = useMemo(
     () => issues.filter((i) => (i.severity === "critical" || i.severity === "high") && (i.category || "") !== "provider_incident"),
@@ -77,14 +89,17 @@ export default function ErrorsPage() {
   return (
     <div>
       <h1>Runtime &amp; Usage Intelligence · API Errors</h1>
-      <p className="subtitle">High/critical reliability findings across your repositories</p>
+      <p className="subtitle">High/critical reliability findings — scoped to the selected repository</p>
+      <div style={{ margin: "12px 0" }}>
+        <RepositorySelector />
+      </div>
       <p style={{ color: "var(--muted)", fontSize: 13, marginTop: -8 }}>
         {summary.total} open error{summary.total !== 1 ? "s" : ""} · {summary.critical} critical · {summary.high} high
       </p>
 
       {errors.length === 0 ? (
         <div className="empty-state">
-          <p>No high-severity API errors right now. Nice.</p>
+          <p>No high-severity API errors for this repository.</p>
           <Link href="/dashboard/health/issues" className="btn btn-primary">
             View all issues
           </Link>

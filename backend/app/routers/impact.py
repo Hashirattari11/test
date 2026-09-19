@@ -398,9 +398,15 @@ def generate_fix_endpoint(
 
 @router.get("/summary")
 def get_impact_summary(
+    repository_id: str | None = Query(None),
     user_id: str = Depends(get_current_user_id),
 ) -> dict:
-    """Get impact analysis summary for dashboard."""
+    """Get impact analysis summary for dashboard.
+
+    When repository_id is provided the summary is scoped to that ONE repository
+    (ownership enforced — 404 for unowned repos, IDOR-safe). Without it the
+    summary aggregates across all of the user's repositories.
+    """
     # Get all repos for user
     repos_result = (
         db()
@@ -409,9 +415,19 @@ def get_impact_summary(
         .eq("user_id", user_id)
         .execute()
     )
-    
+
     repo_ids = [r["id"] for r in (repos_result.data or [])]
-    
+
+    if repository_id:
+        # Ownership-checked scope: unowned repo -> 404 (never leak rows).
+        # This check happens BEFORE the empty-repos return so that requesting a
+        # repository the user cannot own always 404s, never silently returns
+        # an empty aggregate.
+        owned = {r["id"] for r in (repos_result.data or [])}
+        if repository_id not in owned:
+            raise HTTPException(status_code=404, detail="Repository not found")
+        repo_ids = [repository_id]
+
     if not repo_ids:
         return {
             "total_analyses": 0,
@@ -419,8 +435,8 @@ def get_impact_summary(
             "recent_analyses": [],
             "affected_repos": 0,
         }
-    
-    # Get analyses for all repos
+
+    # Get analyses for the scoped repo(s)
     analyses_result = (
         db()
         .table("impact_analyses")

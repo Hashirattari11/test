@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import RepositorySelector from "../../../../components/RepositorySelector";
 import { getHealthIssues, HealthIssue } from "../../../../lib/api";
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -12,15 +14,27 @@ const SEVERITY_COLOR: Record<string, string> = {
 };
 
 export default function SdkPage() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getHealthIssues({ category: "dependency", status: "open", limit: 200 })
+  const load = useCallback(() => {
+    if (!repositoryId) {
+      // Never silently show ALL repositories' data before a repo is selected.
+      setIssues([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setIssues([]); // clear previous repository's results while loading
+    getHealthIssues({ category: "dependency", status: "open", limit: 200, repositoryId })
       .then((res) => setIssues(Array.isArray(res) ? res : []))
       .catch(() => setIssues([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [repositoryId]);
+
+  useEffect(load, [load]);
 
   if (loading) return <div className="loading">Loading SDK checks…</div>;
 
@@ -28,13 +42,16 @@ export default function SdkPage() {
     <div>
       <h1>Code Break Detection · SDK / Library Checker</h1>
       <p className="subtitle">
-        Manifest-driven SDK version findings (package.json, requirements.txt, Gemfile…) for your detected APIs
+        Manifest-driven SDK version findings (package.json, requirements.txt, Gemfile…) — scoped to the selected repository
       </p>
+      <div style={{ margin: "12px 0" }}>
+        <RepositorySelector />
+      </div>
 
       {issues.length === 0 ? (
         <div className="empty-state">
           <p>
-            No SDK/dependency findings. Scan a repository with a manifest (for example package.json) to check
+            No SDK/dependency findings for this repository. Scan it with a manifest (for example package.json) to check
             installed SDK versions against supported majors (Stripe 18, SendGrid 8, Supabase 2…).
           </p>
         </div>

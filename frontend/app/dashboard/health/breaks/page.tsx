@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import RepositorySelector from "../../../../components/RepositorySelector";
 import {
   getHealthIssues,
   HealthIssue,
@@ -17,12 +19,27 @@ const SEVERITY_COLOR: Record<string, string> = {
 };
 
 export default function BreaksPage() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
   const [alerts, setAlerts] = useState<AlertWithRepo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([getHealthIssues({ status: "open", limit: 500 }), listAllAlerts()])
+  const load = useCallback(() => {
+    if (!repositoryId) {
+      // Never silently show ALL repositories' data before a repo is selected.
+      setIssues([]);
+      setAlerts([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setIssues([]); // clear previous repository's results while loading
+    setAlerts([]);
+    Promise.all([
+      getHealthIssues({ status: "open", limit: 500, repositoryId }),
+      listAllAlerts(repositoryId),
+    ])
       .then(([is, al]) => {
         setIssues(Array.isArray(is) ? is : []);
         setAlerts(Array.isArray(al) ? al : []);
@@ -32,7 +49,9 @@ export default function BreaksPage() {
         setAlerts([]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [repositoryId]);
+
+  useEffect(load, [load]);
 
   const criticalIssues = useMemo(
     () => issues.filter((i) => i.severity === "critical" || i.severity === "high"),
@@ -55,11 +74,14 @@ export default function BreaksPage() {
   return (
     <div>
       <h1>Code Break Detection · Potential Breaks</h1>
-      <p className="subtitle">Higher-risk findings that could break your code</p>
+      <p className="subtitle">Higher-risk findings that could break your code — scoped to the selected repository</p>
+      <div style={{ margin: "12px 0" }}>
+        <RepositorySelector />
+      </div>
 
       <h2 style={{ fontSize: 18, margin: "8px 0" }}>Critical/high findings ({criticalIssues.length})</h2>
       {criticalIssues.length === 0 ? (
-        <p style={{ opacity: 0.6 }}>No critical/high findings.</p>
+        <p style={{ opacity: 0.6 }}>No critical/high findings for this repository.</p>
       ) : (
         <div className="issues-list">
           {criticalIssues.map((issue) => (
@@ -91,7 +113,7 @@ export default function BreaksPage() {
 
       <h2 style={{ fontSize: 18, margin: "16px 0 8px" }}>Breaking-change alerts ({breakAlerts.length})</h2>
       {breakAlerts.length === 0 ? (
-        <p style={{ opacity: 0.6 }}>No breaking-change alerts right now.</p>
+        <p style={{ opacity: 0.6 }}>No breaking-change alerts for this repository.</p>
       ) : (
         <div className="issues-list">
           {breakAlerts.map((a) => (

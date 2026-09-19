@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { getHealthAnomalies, HealthIssue, updateHealthIssueStatus } from "../../../../lib/api";
+import RepositorySelector from "../../../../components/RepositorySelector";
+import { getHealthAnomalies, HealthIssue } from "../../../../lib/api";
 import { formatDate } from "../../../../components/ui";
 
 export default function AnomaliesPage() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
   const [summary, setSummary] = useState<{ total: number; critical: number; high: number }>({
     total: 0,
@@ -14,8 +18,17 @@ export default function AnomaliesPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getHealthAnomalies(500)
+  const load = useCallback(() => {
+    if (!repositoryId) {
+      // Never silently show ALL repositories' data before a repo is selected.
+      setIssues([]);
+      setSummary({ total: 0, critical: 0, high: 0 });
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setIssues([]); // clear previous repository's results while loading
+    getHealthAnomalies(500, repositoryId)
       .then((res) => {
         setIssues(Array.isArray(res.anomalies) ? res.anomalies : []);
         setSummary({ total: res.total, critical: res.critical, high: res.high });
@@ -25,7 +38,9 @@ export default function AnomaliesPage() {
         setSummary({ total: 0, critical: 0, high: 0 });
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [repositoryId]);
+
+  useEffect(load, [load]);
 
   const anomalies = useMemo(
     () => issues.filter((i) => i.risk_level === "high" || i.risk_level === "critical"),
@@ -37,14 +52,17 @@ export default function AnomaliesPage() {
   return (
     <div>
       <h1>Runtime &amp; Usage Intelligence · Anomalies</h1>
-      <p className="subtitle">Findings flagged with high/critical explainable risk</p>
+      <p className="subtitle">Findings flagged with high/critical explainable risk — scoped to the selected repository</p>
+      <div style={{ margin: "12px 0" }}>
+        <RepositorySelector />
+      </div>
       <p style={{ color: "var(--muted)", fontSize: 13, marginTop: -8 }}>
         {summary.total} open anomaly{summary.total !== 1 ? "ies" : ""} · {summary.critical} critical · {summary.high} high
       </p>
 
       {anomalies.length === 0 ? (
         <div className="empty-state">
-          <p>No high-risk anomalies detected.</p>
+          <p>No high-risk anomalies for this repository.</p>
           <Link href="/dashboard/health/issues" className="btn btn-primary">
             View all issues
           </Link>

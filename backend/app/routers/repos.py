@@ -149,10 +149,19 @@ def list_connected(
 # NOTE: declared BEFORE "/{repo_id}" so "/alerts" isn't captured as a repo id.
 # ---------------------------------------------------------------------------
 @router.get("/alerts", response_model=list[AlertWithRepoOut])
-def list_all_alerts(user_id: str = Depends(get_current_user_id)) -> list[AlertWithRepoOut]:
-    # Get all repos owned by this user
-    repos_res = db().table("repos").select("id, full_name").eq("user_id", user_id).execute()
-    repos = repos_res.data or []
+def list_all_alerts(
+    repository_id: str | None = Query(None),
+    user_id: str = Depends(get_current_user_id),
+) -> list[AlertWithRepoOut]:
+    # Repository-scoped when requested (ownership enforced — 404 if not owned,
+    # IDOR-safe); otherwise aggregates across all repos owned by this user.
+    if repository_id:
+        _owned_repo(user_id, repository_id)
+        repos_res = db().table("repos").select("id, full_name").eq("id", repository_id).execute()
+        repos = repos_res.data or []
+    else:
+        repos_res = db().table("repos").select("id, full_name").eq("user_id", user_id).execute()
+        repos = repos_res.data or []
     if not repos:
         return []
 

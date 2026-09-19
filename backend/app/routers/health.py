@@ -222,23 +222,34 @@ def list_issues(
     category: str | None = Query(None),
     provider: str | None = Query(None),
     status: str = Query("open"),
+    repository_id: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     user_id: str = Depends(get_current_user_id),
 ) -> list[dict]:
-    repos = _user_repos(user_id)
-    repo_ids = [r["id"] for r in repos]
-    if not repo_ids:
-        return []
-
-    repo_map = {r["id"]: r for r in repos}
-
-    query = (
-        db().table("reliability_issues")
-        .select("*")
-        .in_("repo_id", repo_ids)
-        .eq("status", status)
-        .limit(1000)
-    )
+    if repository_id:
+        # Ownership-checked on the backend: unknown/unowned repo -> 404 (IDOR-safe).
+        repo = _owned_repo(user_id, repository_id)
+        repo_map = {repository_id: repo}
+        query = (
+            db().table("reliability_issues")
+            .select("*")
+            .eq("repo_id", repository_id)
+            .eq("status", status)
+            .limit(1000)
+        )
+    else:
+        repos = _user_repos(user_id)
+        repo_ids = [r["id"] for r in repos]
+        if not repo_ids:
+            return []
+        repo_map = {r["id"]: r for r in repos}
+        query = (
+            db().table("reliability_issues")
+            .select("*")
+            .in_("repo_id", repo_ids)
+            .eq("status", status)
+            .limit(1000)
+        )
     if severity:
         query = query.eq("severity", severity)
     if category:
@@ -250,12 +261,32 @@ def list_issues(
     return _attach_risk(rows, repo_map)[:limit]
 
 
-def _all_open_issues(user_id: str) -> tuple[list[dict], dict[str, dict]]:
-    """Fetch all open reliability issues for the user's repos, risk-attached.
+def _all_open_issues(
+    user_id: str,
+    repository_id: str | None = None,
+) -> tuple[list[dict], dict[str, dict]]:
+    """Fetch open reliability issues risk-attached, scoped to ONE repository
+    (when repository_id is provided) or to all of the user's repositories.
 
-    Returns (rows, repo_map) using the same plumbing as /health/issues so the
-    Runtime Intelligence views share one source of truth.
+    Repository identity is enforced on the QUERY (backend), never left to the
+    frontend to guess: when repository_id is provided the caller must own it
+    (404 otherwise — IDOR-safe), and the database query filters by that
+    repository_id alone. Returns (rows, repo_map) using the same plumbing as
+    /health/issues so the Runtime Intelligence views share one source of truth.
     """
+    if repository_id:
+        repo = _owned_repo(user_id, repository_id)
+        repo_map = {repository_id: repo}
+        rows = (
+            db().table("reliability_issues")
+            .select("*")
+            .eq("repo_id", repository_id)
+            .eq("status", "open")
+            .limit(1000)
+            .execute()
+        ).data or []
+        return _attach_risk(rows, repo_map), repo_map
+
     repos = _user_repos(user_id)
     repo_ids = [r["id"] for r in repos]
     if not repo_ids:
@@ -302,10 +333,15 @@ _CATEGORY_DESC = {
 @router.get("/errors")
 def list_errors(
     limit: int = Query(200, ge=1, le=500),
+    repository_id: str | None = Query(None),
     user_id: str = Depends(get_current_user_id),
 ) -> dict:
-    """API errors: issues with critical/high severity, excluding provider incidents."""
-    rows, repo_map = _all_open_issues(user_id)
+    """API errors: issues with critical/high severity, excluding provider incidents.
+
+    When repository_id is provided the query is scoped to that repository and
+    ownership is enforced on the backend (404 for unowned repos — IDOR-safe).
+    """
+    rows, repo_map = _all_open_issues(user_id, repository_id)
     errors = [
         _with_repo(r, repo_map)
         for r in rows
@@ -326,10 +362,15 @@ def list_errors(
 @router.get("/failures")
 def list_failures(
     limit: int = Query(200, ge=1, le=500),
+    repository_id: str | None = Query(None),
     user_id: str = Depends(get_current_user_id),
 ) -> dict:
-    """Failures: code-side errors (customer_code) and provider incidents."""
-    rows, repo_map = _all_open_issues(user_id)
+    """Failures: code-side errors (customer_code) and provider incidents.
+
+    When repository_id is provided the query is scoped to that repository and
+    ownership is enforced on the backend (404 for unowned repos — IDOR-safe).
+    """
+    rows, repo_map = _all_open_issues(user_id, repository_id)
     failures = [
         _with_repo(r, repo_map)
         for r in rows
@@ -384,10 +425,15 @@ def list_provider_incidents(
 @router.get("/anomalies")
 def list_anomalies(
     limit: int = Query(200, ge=1, le=500),
+    repository_id: str | None = Query(None),
     user_id: str = Depends(get_current_user_id),
 ) -> dict:
-    """Anomalies: findings whose computed risk level is high or critical."""
-    rows, repo_map = _all_open_issues(user_id)
+    """Anomalies: findings whose computed risk level is high or critical.
+
+    When repository_id is provided the query is scoped to that repository and
+    ownership is enforced on the backend (404 for unowned repos — IDOR-safe).
+    """
+    rows, repo_map = _all_open_issues(user_id, repository_id)
     anomalies = [
         _with_repo(r, repo_map)
         for r in rows

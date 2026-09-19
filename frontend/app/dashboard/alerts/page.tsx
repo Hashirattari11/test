@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AlertWithRepo, listAllAlerts, updateAlertStatus } from "@/lib/api";
+import RepositorySelector from "@/components/RepositorySelector";
 
 import { formatDate, SeverityBadge, Spinner } from "@/components/ui";
 import { ErrorCard, PageHeader } from "@/components/dashboard-ui";
 
 export default function AlertsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [alerts, setAlerts] = useState<AlertWithRepo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [severityFilter, setSeverityFilter] = useState<string>("all");
-  const [repoFilter, setRepoFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -31,23 +33,22 @@ export default function AlertsPage() {
 
   const load = useCallback(async () => {
     try {
-      const a = await listAllAlerts();
+      // repository_id is enforced backend-side (ownership check); without it
+      // the endpoint returns the aggregate across the user's repositories.
+      const a = await listAllAlerts(repositoryId || undefined);
       setAlerts(a);
     } catch (e: any) {
       setError(e.message || "Failed to load alerts");
     }
-  }, []);
+  }, [repositoryId]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const repos = alerts ? Array.from(new Set(alerts.map((a) => a.repo_name))).sort() : [];
-
   const filtered = (alerts ?? []).filter(
     (a) =>
       (severityFilter === "all" || a.severity === severityFilter) &&
-      (repoFilter === "all" || a.repo_name === repoFilter) &&
       (statusFilter === "all" ||
         (statusFilter === "open"
           ? a.status !== "resolved" && a.status !== "ignored"
@@ -58,7 +59,11 @@ export default function AlertsPage() {
     <div className="p-page">
       <PageHeader
         title="Alerts"
-        subtitle="Breaking changes matched to your code across all monitored repos, sorted by severity."
+        subtitle={
+          repositoryId
+            ? "Breaking changes matched to the selected repository, sorted by severity."
+            : "Breaking changes matched to your code across all monitored repos, sorted by severity."
+        }
       />
 
       {error && <ErrorCard title="Could not load alerts" body={error} retry={load} />}
@@ -92,23 +97,9 @@ export default function AlertsPage() {
                 <option value="low">Low</option>
               </select>
             </div>
-            {repos.length > 0 && (
-              <div className="p-filter-group" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <label className="muted small" htmlFor="repoFilter" style={{ margin: 0 }}>Repo</label>
-                <select
-                  id="repoFilter"
-                  className="input"
-                  style={{ width: "auto", padding: "6px 10px" }}
-                  value={repoFilter}
-                  onChange={(e) => setRepoFilter(e.target.value)}
-                >
-                  <option value="all">All repos</option>
-                  {repos.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className="p-filter-group" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <RepositorySelector allowAll />
+            </div>
             <div className="p-filter-group" style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <label className="muted small" htmlFor="statusFilter" style={{ margin: 0 }}>Status</label>
               <select

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import RepositorySelector from "../../../../components/RepositorySelector";
 import {
   getHealthIssues,
   HealthIssue,
@@ -16,12 +18,27 @@ const SEVERITY_COLOR: Record<string, string> = {
 };
 
 export default function DeprecatedPage() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
   const [alerts, setAlerts] = useState<AlertWithRepo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([getHealthIssues({ status: "open", limit: 500 }), listAllAlerts()])
+  const load = useCallback(() => {
+    if (!repositoryId) {
+      // Never silently show ALL repositories' data before a repo is selected.
+      setIssues([]);
+      setAlerts([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setIssues([]); // clear previous repository's results while loading
+    setAlerts([]);
+    Promise.all([
+      getHealthIssues({ status: "open", limit: 500, repositoryId }),
+      listAllAlerts(repositoryId),
+    ])
       .then(([is, al]) => {
         setIssues(Array.isArray(is) ? is : []);
         setAlerts(Array.isArray(al) ? al : []);
@@ -31,7 +48,9 @@ export default function DeprecatedPage() {
         setAlerts([]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [repositoryId]);
+
+  useEffect(load, [load]);
 
   const engineFindings = useMemo(
     () => issues.filter((i) => i.category === "configuration" || i.category === "dependency"),
@@ -56,12 +75,15 @@ export default function DeprecatedPage() {
     <div>
       <h1>Code Break Detection · Deprecated APIs</h1>
       <p className="subtitle">
-        Engine findings + changelog notices about deprecated/removed APIs used in your code
+        Engine findings + changelog notices about deprecated/removed APIs — scoped to the selected repository
       </p>
+      <div style={{ margin: "12px 0" }}>
+        <RepositorySelector />
+      </div>
 
       <h2 style={{ fontSize: 18, margin: "8px 0" }}>Engine findings ({engineFindings.length})</h2>
       {engineFindings.length === 0 ? (
-        <p style={{ opacity: 0.6 }}>No configuration/dependency findings.</p>
+        <p style={{ opacity: 0.6 }}>No configuration/dependency findings for this repository.</p>
       ) : (
         <div className="issues-list">
           {engineFindings.map((issue) => (
@@ -90,7 +112,7 @@ export default function DeprecatedPage() {
 
       <h2 style={{ fontSize: 18, margin: "16px 0 8px" }}>Changelog notices ({changelogFindings.length})</h2>
       {changelogFindings.length === 0 ? (
-        <p style={{ opacity: 0.6 }}>No deprecation notices for your detected APIs.</p>
+        <p style={{ opacity: 0.6 }}>No deprecation notices for this repository.</p>
       ) : (
         <div className="issues-list">
           {changelogFindings.map((a) => (

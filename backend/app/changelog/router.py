@@ -9,11 +9,11 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..config import settings
 from ..cronlog import run_cron
-from ..db import db
+from ..db import db, fetch_one
 from ..alerts import process_new_events, send_approved_alerts
 from ..deps import get_current_user_id, require_internal_secret
 from .scheduler import fetch_all_providers, log_health, run_daily_scans, run_impact_analysis_for_recent_events
@@ -161,12 +161,22 @@ async def admin_disable(
 
 
 @router.get("/internal/changelog/notices")
-async def changelog_notices(user_id: str = Depends(get_current_user_id)) -> dict:
-    """Dashboard view: notices surfaced for repos owned by the user."""
-    repos = (
-        db().table("repos").select("id").eq("user_id", user_id).execute()
-    ).data or []
-    repo_ids = [r["id"] for r in repos]
+async def changelog_notices(
+    repository_id: str | None = Query(None),
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Dashboard view: notices surfaced for one repo (when repository_id is
+    provided and owned) or for all repos owned by the user."""
+    if repository_id:
+        repo = fetch_one("repos", {"id": repository_id})
+        if not repo or repo["user_id"] != user_id:
+            raise HTTPException(status_code=404, detail="Repo not found")
+        repo_ids = [repository_id]
+    else:
+        repos = (
+            db().table("repos").select("id").eq("user_id", user_id).execute()
+        ).data or []
+        repo_ids = [r["id"] for r in repos]
     if not repo_ids:
         return {"notices": []}
 

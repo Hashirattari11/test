@@ -245,7 +245,8 @@ export const getRepo = (id: string) => request<Repo>(`/repos/${id}`);
 export const getDetections = (id: string) =>
   request<DetectionsResponse>(`/repos/${id}/detections`);
 export const getAlerts = (id: string) => request<Alert[]>(`/repos/${id}/alerts`);
-export const listAllAlerts = () => request<AlertWithRepo[]>("/repos/alerts");
+export const listAllAlerts = (repositoryId?: string) =>
+  request<AlertWithRepo[]>(`/repos/alerts${repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : ""}`);
 export const updateAlertStatus = (id: string, status: "resolved" | "ignored") =>
   request<AlertWithRepo>(`/repos/alerts/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
 export const scanRepo = (id: string) =>
@@ -612,6 +613,7 @@ export const getHealthIssues = (params?: {
   category?: string;
   provider?: string;
   status?: string;
+  repositoryId?: string;
   limit?: number;
 }) => {
   const q = new URLSearchParams();
@@ -619,6 +621,7 @@ export const getHealthIssues = (params?: {
   if (params?.category) q.set("category", params.category);
   if (params?.provider) q.set("provider", params.provider);
   if (params?.status) q.set("status", params.status);
+  if (params?.repositoryId) q.set("repository_id", params.repositoryId);
   if (params?.limit) q.set("limit", String(params.limit));
   return request<HealthIssue[]>(`/health/issues?${q.toString()}`);
 };
@@ -632,19 +635,19 @@ export type HealthRuntimeList<T extends string> = {
   [listKey: string]: number | HealthIssue[] | undefined;
 };
 
-export const getHealthErrors = (limit = 200) =>
+export const getHealthErrors = (limit = 200, repositoryId?: string) =>
   request<{ total: number; critical: number; high: number; errors: HealthIssue[] }>(
-    `/health/errors?limit=${limit}`
+    `/health/errors?limit=${limit}${repositoryId ? `&repository_id=${encodeURIComponent(repositoryId)}` : ""}`
   );
 
-export const getHealthFailures = (limit = 200) =>
+export const getHealthFailures = (limit = 200, repositoryId?: string) =>
   request<{ total: number; customer_code: number; provider_incident: number; failures: HealthIssue[] }>(
-    `/health/failures?limit=${limit}`
+    `/health/failures?limit=${limit}${repositoryId ? `&repository_id=${encodeURIComponent(repositoryId)}` : ""}`
   );
 
-export const getHealthAnomalies = (limit = 200) =>
+export const getHealthAnomalies = (limit = 200, repositoryId?: string) =>
   request<{ total: number; critical: number; high: number; anomalies: HealthIssue[] }>(
-    `/health/anomalies?limit=${limit}`
+    `/health/anomalies?limit=${limit}${repositoryId ? `&repository_id=${encodeURIComponent(repositoryId)}` : ""}`
   );
 
 export const updateHealthIssueStatus = (issueId: string, status: string) =>
@@ -805,7 +808,8 @@ export const getImpactAnalyses = (repoId: string, limit = 50, offset = 0, severi
 export const getImpactAnalysis = (analysisId: string) =>
   request<ImpactAnalysis>(`/impact/analyses/${analysisId}`);
 
-export const getImpactSummary = () => request<ImpactSummary>(`/impact/summary`);
+export const getImpactSummary = (repositoryId?: string) =>
+  request<ImpactSummary>(`/impact/summary${repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : ""}`);
 
 export const analyzeChangelogEvent = (changelogEventId: string, repoId: string) =>
   request<ImpactAnalysis>(`/impact/analyze-event`, {

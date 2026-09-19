@@ -1,39 +1,47 @@
-# Project Context
+# Project Context — AutoFix API (Breaklytix)
 
 ## Environment
-- Python FastAPI backend + TypeScript/Next.js frontend; workdir D:\autofix (git, main).
-- win32 / PowerShell 5.1 (no heredoc/no `&&`; use `;`/cmd).
-- Vercel CLI 58.7.1 (hashirattari11); token `C:\Users\AAMASH\AppData\Roaming\xdg.data\com.vercel.cli\auth.json` (len 60). Org team_VajkoNE2yGmuAR89Mm13PZx3.
-- Projects: backend prj_Zw3MX8LSD6C4I6C4WoknhsHMxzjI (live backend-virid-ten-43.vercel.app), frontend prj_A73XsdB63JtYbfaFrsjrUK9Yhxja, autofix prj_6i3aRh5pWFnWASmzgjfq0T5MzeLM (root .vercel; .vercel.bak=backend; .vercel.bak2=frontend).
-- Supabase MCP available for prod DB checks.
+- Backend: Python + FastAPI, Supabase (PostgREST) prod DB, deployed Vercel (backend-virid-ten-43.vercel.app)
+- Frontend: Next.js App Router + TS, deployed Vercel
+- Shell: win32 PowerShell 5.1; no heredoc/&&; agent delegation truncates — terse prompts only
+- Tests: backend `python -m pytest tests -q` (baseline 168); frontend `npx tsc --noEmit`
+- Backend/DB is source of truth for repo identity; never expose secrets; no fake data
 
-## MISSION (44-provider real changelog monitoring M1-M8)
-- 44 ids: stripe, shopify, twilio, sendgrid, github, openai, anthropic, paypal, resend, slack, supabase, firebase, aws, vercel, cloudinary, googleai, huggingface, elevenlabs, postmark, mailgun, digitalocean, sentry, auth0, clerk, mapbox, algolia, posthog, mixpanel, segment, intercom, discord, telegram, whatsapp, twitter, zoom, pusher, youtube, notion, airtable, mongodb, redis, plaid, openweather, serpapi.
-- Brand: user spec `[AutoFix API]` → product `[Breaklytix]` (flag in final report).
-- Source kinds: RSS (shopify, github), GITHUB_RELEASES (sentry, redis), HTML_STRICT (others; stripe=HTML_STRICT honest 0 → LIMITED).
-- Enums: change_type 15; severity CRITICAL/HIGH/MEDIUM/LOW/INFO/UNKNOWN; confidence HIGH/MEDIUM/LOW/UNKNOWN; review_state unreviewed/reviewed/dismissed.
-- No-fabrication invariant: RawEntry requires external_id+title+url+published_at; 60d lookback; undated dropped → LIMITED.
-- Alerts: always-email CRITICAL/HIGH; MEDIUM/LOW/INFO only HIGH confidence; UNKNOWN never. Subjects `[Breaklytix] High-Risk API Change Detected — {P}` / `[Breaklytix] API Change Notice — {P}`.
-- Impact: "Potential impact detected: …" / "No matching repository usage detected"; NEVER "crash".
+## MISSION 2 (ACTIVE): Production-readiness — Repository-Aware Real Code Intelligence
+User's 55-req master task: repo isolation, issue verification, impact engine correctness, fire drill ALL 44 providers, security (IDOR/secrets), alerts w/ repo context, scan comparison, no fabricated data. Final deliverable = REPORT_REPO_AWARE_INTELLIGENCE.md (sections A-L) + 4-repo E2E test. Rules: don't rebuild app, no parallel architecture, don't remove features.
+Phase 0 audit DONE. Fix list G1–G7 in `.opencode/todo.md` (20 subtasks).
 
-## ⚠️ INCIDENT (2026-09-17) — FULLY RESOLVED
-- `cmd /c "rmdir /s /q D:\autofix\backend\$null"` → PS expanded $null=empty → deleted backend/. RECOVERY: `git restore --worktree backend/` (HEAD pre-mission) + Vercel dep file download via `GET /v13/deployments/{id}/files` (list) + `GET /v8/deployments/{id}/files/{fileId}` → base64 (content) from **dpl_Dpbta9WELtUKuCHSzVfeaLgJNnNc**. Downloader `C:\Users\AAMASH\AppData\Local\Temp\opencode\vercel_fetch.ps1` → `...\vercel_restore\src\` → copied back to backend/.
-- WIPED local-only fixes REPLAYED: (1) scheduler.py env budgets + `_db_retry` + bulk store + 23505 dup + real duration_ms + fetched count; (2) 15 URL corrections (fix_urls.py, survived); (3) stripe RSS→HTML_STRICT; (4) paypal URL → https://developer.paypal.com/api/rest/ (200 live); (5) **NEW FIX: budget-expired providers no longer written as ERROR** (was corrupting ACTIVE providers when Vercel cron's 25s budget expired — keep last completed status, report timed_out only in results); (6) test_default_status_map updated (stripe default LIMITED).
+## Current Status (compaction #3, 2026-09-17 ~10:04)
+WAVE-1 (all 5 Workers COMPLETED, changes CONFIRMED via git status):
+- T1.1 (task_8b21ce33): redact.py NEW, runner.py M, health/bridge.py M, repos.py M, schemas.py M, migration 20260917_findings_verification.sql, test_security_redaction.py + test_finding_status.py NEW
+- T1.2 (task_1985d6d3): engine/rules/registry.py M, engine/rules/matcher.py M, test_rules_overclaim.py NEW
+- T1.3 (task_4e2d9b59): impact/analyzer.py M, routers/impact.py M (POST /impact/fire-drill-matrix), test_impact_verification.py NEW
+- T1.4 (task_08f9ad7c): routers/repos.py M (GET /repos/{repo_id}/scan-comparison?since_scan_id=), test_scan_comparison.py NEW
+- T2.1 (task_9182f119): frontend/app/dashboard/DashboardClient.tsx M (repo full_name on issues + error bars)
+- 4 new test files confirmed untracked (??): test_impact_verification.py, test_rules_overclaim.py, test_scan_comparison.py, test_security_redaction.py
 
-## ✅ VERIFIED FINAL STATE
-- **Prod matrix: 7 ACTIVE / 2 ERROR / 35 LIMITED = 44** ✓ ACTIVE: clerk, github, redis, sentry, serpapi, shopify, slack. ERROR: telegram (network block), segment (403) — both external.
-- Real stored events: shopify 43, redis 18, github 10, serpapi 9, slack 8, clerk 6, sentry 4 (all external_id). Dedup 0. SOURCE_UNAVAILABLE 0.
-- **Backend tests: 168 passed** (5.85s). **Frontend tsc --noEmit: exit 0.**
-- **Commits**: `89ef8a5` (recovery + scheduler fixes), `a04a939` (URL fixes + stripe/paypal + budget-expiry fix). Code SAFE in git.
-- **Backend deployed**: `backend-3qivre7qj` Ready Production (correct backend project via standalone temp dir `C:\Users\AAMASH\AppData\Local\Temp\opencode\backend_deploy` w/ own .vercel). Live backend-virid-ten-43.vercel.app → 401 on /internal/changelog/health.
-- Root D:\autofix\.vercel restored (autofix project).
+WAVE-2 (spawned 10:04, RUNNING):
+- task_d9f649a7 (Worker): T2.2 frontend fire drill 44 — page.tsx COMMON_PROVIDERS→full MONITORED_APIS (backend/app/signatures.py keys), matrix button → POST /impact/fire-drill-matrix, render {provider: active|inactive|unknown}; npx tsc --noEmit must pass
+- task_623bfca1 (Reviewer): M3 backend verification — git diff review of all wave-1 files, verify redact() in _persist_findings/_persist_api_detections, taxonomy, registry overclaim fixes, analyzer verification_status, fire-drill-matrix, scan-comparison; run pytest (168+4 new); report only, NO todo marks yet
 
-## PENDING — FINISH MISSION (final steps only)
-1. Write **D:\autofix\REPORT_44_PROVIDER_MONITORING.md** (S8.2.1) — Worker agents truncated 4x (task_904e2cc9, task_a7c3d219, task_c55c0c21, task_b9a67167) — Commander writes directly. Sections: Summary, What Was Built (mechanism→file map per requirements), DB Migrations, Live Verification Results, Test Results (168+tsc0), Limitations & Honest Notes ([Breaklytix] brand flag; HTML_STRICT→LIMITED; telegram/segment external ERRORs; Vercel cron 30s budget may timeout (now non-destructive); deployed INTERNAL_SECRET ≠ local .env → live internal 401; live verification via local-fetch-against-prod-DB), Files Changed (from git log/stat).
-2. Mark **.opencode/todo.md** [x]: S7.1.7, S7.2.1, S7.2.2, S8.1.1, S8.1.2, S8.1.3, S8.1.4 → propagate M7/T7.1/T7.2 + M8/T8.1 complete. NOT S8.2.x (Worker deliverables — report is done by Commander; if S8.2.x exist leave or mark done with report).
-3. Append verification summary to **.opencode/integration-status.md**, update work-log.md with final rows.
-4. Conclude — final summary to user with all flags. Do NOT commit .env / INTERNAL_SECRET.
+git log: a3f5ffe (M1-M8 doc), a04a939, 89ef8a5 (44-provider), 3d0233b (Breaklytix rebrand), a852021.
 
-## Temp tools (survived)
-- fix_urls.py, fetch_all_runner2.py, probe_paypal2.py, gen_matrix.py, e2e_provider.py, verify_brand.py, live_smoke.py, parity_check.py. backend_deploy dir = deployable snapshot (current).
-- Sweep outputs: .opencode/sweep2.json, sweep3.json (committed — fine to keep).
+## Pending Tasks
+1. Get results of task_d9f649a7 (Wave-2 frontend) + task_623bfca1 (backend verify). Fix any pytest/tsc failures via targeted Worker edits.
+2. Launch final Reviewer pass (M3): frontend `npx tsc --noEmit`, cross-repo isolation test (2 repos, findings of repo A never in repo B responses), mark ALL [x] in todo.md, write D:\autofix\REPORT_REPO_AWARE_INTELLIGENCE.md (sections A-L).
+3. Conclude only after: ALL 20 todo items [x], py>=172+ tests pass, tsc clean, sync-issues.md empty.
+
+## Key Files
+- Routers: backend/app/routers/{repos,health,impact,internal,fixes,admin,agency,public_api}.py
+- Scanner: backend/app/engine/scanner/{runner,ast_scan}.py; engine/rules/{registry,matcher}.py; app/detection.py; app/signatures.py (MONITORED_APIS=44)
+- Impact: backend/app/impact/{analyzer,severity,fix_generator}.py
+- Frontend: frontend/app/dashboard/impact/fire-drill/page.tsx (COMMON_PROVIDERS L25); frontend/app/dashboard/DashboardClient.tsx
+- Schema: db/*.sql + Supabase prod DB (users, repos, api_detections, changelog_events, alerts, findings(+scan_id,rule_id,confidence), scans(+stats jsonb), reliability_issues(+content_hash,evidence), impact_analyses, health_scores, health_history, provider_incidents, fixes, fix_rules, provider_connections, plan_usage, stripe_webhook_events)
+- Shared state: .opencode/todo.md (20 items), work-log.md, sync-issues.md (0)
+
+## Known Gaps (Phase 0 audit)
+G1 secrets persisted → redact (DONE wave-1); G2 findings taxonomy DETECTED/POTENTIAL/VERIFIED/FALSE_POSITIVE/UNKNOWN/RESOLVED (DONE); G3 analyzer verification_status (DONE); G4 fire drill 12→44 (IN PROGRESS wave-2); G5 rules overclaim (DONE); G6 frontend repo identity (DONE); G7 scan comparison (DONE).
+38 tables referenced; 14 have NO DDL (scans, findings, scan_events, impact_analyses, agency_clients, code_health_issues, daily_scan_runs, pull_requests, provider_connections, notification_preferences, slack_connections, email_deliveries, api_keys, provider_monitoring_status) — schema drift; prod DB is source of truth (do NOT create migrations for these unless required; migrations only for new findings columns via 20260917 file).
+
+## Anomaly note
+Repeated "low information density" flags occurred during Phase-0 report delivery; mitigation = terse output, avoid long reports in chat; final report goes to REPORT file instead.

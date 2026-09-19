@@ -29,6 +29,7 @@ interface Issue {
   risk_level?: string;
   risk_score?: number;
   risk_factors?: string[];
+  repo_full_name?: string;
 }
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -119,6 +120,9 @@ export default function IssueDetailPage({ params }: { params: { id: string } }) 
           )}
           <span className="issue-category">{issue.category}</span>
           <span className="issue-provider">{issue.provider}</span>
+                {issue.repo_full_name && (
+                  <span className="issue-provider" style={{ opacity: 0.7 }}>{issue.repo_full_name}</span>
+                )}
           <span className={`status-pill status-${issue.status}`}>{issue.status}</span>
         </div>
         <h1>{issue.title}</h1>

@@ -78,6 +78,9 @@ export default function FailuresPage() {
                 </span>
                 <span className="issue-category">{issue.category}</span>
                 <span className="issue-provider">{issue.provider}</span>
+                {issue.repo_full_name && (
+                  <span className="issue-provider" style={{ opacity: 0.7 }}>{issue.repo_full_name}</span>
+                )}
               </div>
               <h3 className="issue-title">{issue.title}</h3>
               <p className="issue-description">{issue.description}</p>

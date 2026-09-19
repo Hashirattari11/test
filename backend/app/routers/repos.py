@@ -1139,13 +1139,156 @@ def list_repo_findings(
     return FindingsListOut(findings=[FindingOut(**f) for f in (res.data or [])])
 
 
+def compare_scan_findings(before_rows: list[dict], after_rows: list[dict]) -> dict:
+    """Delta between two scans' findings keyed by (file, line, message).
+
+    Pure function (unit-testable). Returns added/removed/unchanged plus
+    lifecycle counts derived only from the rows provided — never fabricates.
+    """
+    def _key(row: dict) -> tuple:
+        return (row.get("file"), row.get("line"), row.get("message"))
+
+    before = {_key(r): r for r in before_rows}
+    after = {_key(r): r for r in after_rows}
+
+    added = [dict(a) for k, a in after.items() if k not in before]
+    removed = [dict(b) for k, b in before.items() if k not in after]
+    unchanged = [dict(b) for k, b in before.items() if k in after]
+
+    resolved_count = 0
+    regressed_count = 0
+    for k, b in before.items():
+        a = after.get(k)
+        if not a:
+            continue
+        b_open = b.get("status") in ("open", None)
+        a_open = a.get("status") in ("open", None)
+        if b_open and not a_open:
+            resolved_count += 1
+        elif not b_open and a_open:
+            regressed_count += 1
+
+    added_by_severity: dict[str, int] = {}
+    for a in added:
+        sev = a.get("severity") or "unknown"
+        added_by_severity[sev] = added_by_severity.get(sev, 0) + 1
+
+    return {
+        "added": added,
+        "removed": removed,
+        "unchanged_count": len(unchanged),
+        "added_count": len(added),
+        "removed_count": len(removed),
+        "resolved_count": resolved_count,
+        "regressed_count": regressed_count,
+        "added_by_severity": added_by_severity,
+    }
+
+
+@router.get("/{repo_id}/scan-comparison")
+def scan_comparison(
+    repo_id: str,
+    before_scan_id: str | None = Query(None),
+    after_scan_id: str | None = Query(None),
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Compare findings between two scans of the same repo.
+
+    Defaults: after = latest COMPLETED scan; before = the scan before it (or an
+    empty baseline when only one scan exists). Never invents rows — the delta
+    is computed only from the repo's own findings rows.
+    """
+    _owned_repo(user_id, repo_id)
+
+    scans = (
+        db().table("scans").select("id, status, started_at")
+        .eq("repo_id", repo_id)
+        .eq("status", "COMPLETED")
+        .order("started_at", desc=True)
+        .limit(20)
+        .execute()
+    ).data or []
+
+    if not scans:
+        return {
+            "repo_id": repo_id,
+            "before_scan_id": None,
+            "after_scan_id": None,
+            "added": [], "removed": [],
+            "unchanged_count": 0, "added_count": 0, "removed_count": 0,
+            "resolved_count": 0, "regressed_count": 0,
+            "added_by_severity": {},
+            "message": "No completed scans yet — nothing to compare.",
+        }
+
+    after_row = next((s for s in scans if s["id"] == after_scan_id), scans[0]) if after_scan_id else scans[0]
+    before_row = None
+    if before_scan_id:
+        before_row = next((s for s in scans if s["id"] == before_scan_id), None)
+    else:
+        # scan immediately after `after` in history (i.e. the previous scan)
+        idx = next((i for i, s in enumerate(scans) if s["id"] == after_row["id"]), 0)
+        before_row = scans[idx + 1] if idx + 1 < len(scans) else None
+
+    def _findings(scan_id: str | None) -> list[dict]:
+        if not scan_id:
+            return []
+        return (
+            db().table("findings").select("*").eq("repo_id", repo_id).eq("scan_id", scan_id)
+            .execute()
+        ).data or []
+
+    after_rows = _findings(after_row["id"])
+    before_rows = _findings(before_row["id"]) if before_row else []
+
+    delta = compare_scan_findings(before_rows, after_rows)
+    return {
+        "repo_id": repo_id,
+        "before_scan_id": before_row["id"] if before_row else None,
+        "after_scan_id": after_row["id"],
+        **delta,
+    }
+
+
+_VERIFICATION_STATUSES = {"detected", "potential", "verified", "false_positive", "unknown", "resolved"}
+_WORKFLOW_STATUSES = {"open", "fixed", "dismissed"}
+
+
+def _resolve_finding_status(workflow: str | None, verification: str | None) -> tuple[str, str | None]:
+    """Map the verification taxonomy onto the legacy workflow status + keep both.
+
+    Returns (status, verification_status). Conservative mapping:
+      - verification 'verified'  -> status stays open (user confirms manually)
+      - verification 'resolved'  -> status 'fixed'
+      - verification 'false_positive' / 'unknown' -> status 'dismissed'
+    """
+    vstatus = verification.strip().lower() if verification else None
+    if vstatus is not None and vstatus not in _VERIFICATION_STATUSES:
+        raise ValueError(f"verification_status must be one of {sorted(_VERIFICATION_STATUSES)}")
+    status = workflow
+    if status is not None and status not in _WORKFLOW_STATUSES:
+        raise ValueError(f"status must be one of {sorted(_WORKFLOW_STATUSES)}")
+    if vstatus == "resolved":
+        status = "fixed"
+    elif vstatus == "false_positive":
+        status = "dismissed"
+    elif vstatus == "unknown":
+        # "unknown" is deliberately non-destructive: we cannot tell either way,
+        # so we never auto-dismiss an open finding on uncertainty alone.
+        status = status or "open"
+    return status, vstatus
+
+
 @router.patch("/findings/{finding_id}", response_model=FindingOut)
 def update_finding(
     finding_id: str,
     body: FindingUpdateIn,
     user_id: str = Depends(get_current_user_id),
 ) -> FindingOut:
-    """Set finding status: open | fixed | dismissed."""
+    """Set finding workflow status (open | fixed | dismissed) and/or the
+    verification taxonomy (detected | potential | verified | false_positive |
+    unknown | resolved). Verification values map conservatively onto the
+    workflow status; both are persisted so no existing UI breaks."""
     row = fetch_one("findings", {"id": finding_id})
     if not row:
         raise HTTPException(status_code=404, detail="Finding not found")
@@ -1153,12 +1296,20 @@ def update_finding(
     if not repo or repo["user_id"] != user_id:
         raise HTTPException(status_code=404, detail="Finding not found")
 
-    def _severity_key(sev: str) -> int:
-        return {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}.get(sev, 5)
+    try:
+        status, vstatus = _resolve_finding_status(body.status, body.verification_status)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
-    _order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
-    now = datetime.now(timezone.utc).isoformat()
-    db().table("findings").update({"status": body.status, "updated_at": now}).eq("id", finding_id).execute()
+    updates: dict = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if status is not None:
+        updates["status"] = status
+    if vstatus is not None:
+        updates["verification_status"] = vstatus
+    if body.evidence_url is not None:
+        updates["evidence_url"] = body.evidence_url
+
+    db().table("findings").update(updates).eq("id", finding_id).execute()
     updated = fetch_one("findings", {"id": finding_id})
     return FindingOut(**updated)
 

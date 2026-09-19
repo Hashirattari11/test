@@ -33,6 +33,8 @@ def enrich_findings(findings_rows: list[dict], tree_paths: list[str] | None = No
                     continue
 
             message = f"{rule.title}: {rule.description}"
+            if rule.change_type != "secret_leak":
+                message = f"Potential: {message}"
             key = (row.get("file"), row.get("line"), message)
             if key in existing_keys:
                 continue
@@ -51,6 +53,7 @@ def enrich_findings(findings_rows: list[dict], tree_paths: list[str] | None = No
                 "recommended_fix": rule.recommended_fix,
                 "confidence": rule.confidence,
                 "status": "open",
+                "verification_status": "potential",
                 "tech": row.get("tech"),
                 "rule_id": rule.id,
             })

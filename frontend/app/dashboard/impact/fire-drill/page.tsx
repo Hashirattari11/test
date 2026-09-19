@@ -8,6 +8,9 @@ import {
   getImpactAnalyses,
   ImpactAnalysis,
   runFireDrill,
+  fireDrillMatrix,
+  FireDrillMatrix,
+  FireDrillMatrixRow,
 } from "../../../../lib/api";
 import { Badge, severityTone, timeAgo } from "../../../../components/dashboard-ui";
 import { Spinner } from "../../../../components/ui";
@@ -21,8 +24,24 @@ const SEVERITY_COLORS: Record<string, string> = {
   unknown: "#6b7280",
 };
 
-// Common providers for quick selection
-const COMMON_PROVIDERS = ["stripe", "openai", "anthropic", "twilio", "sendgrid", "supabase", "github", "shopify", "firebase", "slack", "resend", "vercel"];
+// All 44 monitored providers (mirrors backend changelog/sources.py PROVIDER_SOURCES ids).
+const ALL_PROVIDERS = [
+  "stripe", "shopify", "paypal", "plaid", "twilio", "sendgrid", "resend", "slack", "discord", "telegram",
+  "whatsapp", "twitter", "zoom", "pusher", "postmark", "mailgun", "aws", "vercel", "cloudinary", "firebase",
+  "digitalocean", "openai", "anthropic", "googleai", "huggingface", "elevenlabs", "posthog", "mixpanel", "segment", "intercom",
+  "github", "sentry", "auth0", "clerk", "algolia", "mapbox", "supabase", "mongodb", "redis", "airtable",
+  "youtube", "notion", "openweather", "serpapi",
+];
+
+// Curated quick-pick chips (subset of ALL_PROVIDERS for one-tap selection).
+const QUICK_PICK = ["stripe", "openai", "anthropic", "twilio", "sendgrid", "supabase", "github", "shopify", "firebase", "slack", "resend", "vercel"];
+
+const MATRIX_TONE: Record<string, string> = {
+  active: "#ef4444",
+  at_risk: "#f97316",
+  unknown: "#f59e0b",
+  inactive: "#6b7280",
+};
 
 export default function FireDrillPage() {
   const [repos, setRepos] = useState<Repo[]>([]);
@@ -33,6 +52,9 @@ export default function FireDrillPage() {
   const [error, setError] = useState("");
   const [recentAnalyses, setRecentAnalyses] = useState<ImpactAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
+  const [matrix, setMatrix] = useState<FireDrillMatrix | null>(null);
+  const [matrixBusy, setMatrixBusy] = useState(false);
+  const [matrixError, setMatrixError] = useState("");
 
   useEffect(() => {
     listRepos()
@@ -58,6 +80,29 @@ export default function FireDrillPage() {
       setRunning(false);
     }
   };
+
+  const runMatrix = async () => {
+    if (!selectedRepo || matrixBusy) return;
+    setMatrixBusy(true);
+    setMatrixError("");
+    setMatrix(null);
+    try {
+      const res = await fireDrillMatrix(selectedRepo);
+      setMatrix(res);
+    } catch (e) {
+      setMatrixError(String(e));
+    } finally {
+      setMatrixBusy(false);
+    }
+  };
+
+  const sortedMatrix = () =>
+    matrix
+      ? [...matrix.providers].sort((a, b) => {
+          const order = { active: 0, at_risk: 1, unknown: 2, inactive: 3 };
+          return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+        })
+      : [];
 
   if (loading) {
     return (
@@ -107,10 +152,17 @@ export default function FireDrillPage() {
           >
             {running ? "Running drill…" : "Run Fire Drill"}
           </button>
+          <button
+            className="btn btn-secondary"
+            onClick={runMatrix}
+            disabled={!selectedRepo || matrixBusy}
+          >
+            {matrixBusy ? "Running matrix…" : "Run Full Matrix (44 providers)"}
+          </button>
         </div>
         <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
           <span className="muted small" style={{ marginRight: 4 }}>Quick pick:</span>
-          {COMMON_PROVIDERS.map((p) => (
+          {QUICK_PICK.map((p) => (
             <button
               key={p}
               className="pill"
@@ -190,6 +242,81 @@ export default function FireDrillPage() {
               Open Full Analysis
             </Link>
           </div>
+        </section>
+      )}
+
+      {matrixError && (
+        <section className="card" style={{ padding: 16, marginTop: 20 }}>
+          <p style={{ color: "#ef4444", margin: 0 }}>
+            Matrix unavailable: {matrixError} — the fire-drill matrix endpoint is not
+            available yet. Run individual drills above.
+          </p>
+        </section>
+      )}
+
+      {/* Full matrix result (all 44 providers, real evidence only) */}
+      {matrix && (
+        <section className="card" style={{ padding: 0, marginTop: 20 }}>
+          <div style={{ padding: "16px 20px 0" }}>
+            <h2 style={{ marginBottom: 4 }}>Provider Matrix</h2>
+            <p className="muted small" style={{ marginTop: 0 }}>
+              All {matrix.total} monitored providers classified from this repo's real usage and
+              changelog events. Active = usage + recent change; At risk = usage, no recent change;
+              Unknown = events exist, no usage here; Inactive = neither.
+            </p>
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 10 }}>
+              {(["active", "at_risk", "unknown", "inactive"] as const).map((k) => (
+                <span key={k} className="small">
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: MATRIX_TONE[k],
+                      marginRight: 5,
+                    }}
+                  />
+                  <strong style={{ textTransform: "capitalize" }}>{k}:</strong>{" "}
+                  {matrix.summary[k]}
+                </span>
+              ))}
+            </div>
+          </div>
+          <table className="table responsive-cards">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Status</th>
+                <th>Usage detected</th>
+                <th>Recent events</th>
+                <th>Latest event</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedMatrix().map((row: FireDrillMatrixRow) => (
+                <tr key={row.provider}>
+                  <td data-label="Provider"><strong>{row.provider}</strong></td>
+                  <td data-label="Status">
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        color: MATRIX_TONE[row.status] || "#6b7280",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {row.status}
+                    </span>
+                  </td>
+                  <td data-label="Usage detected">{row.usage_detected ? "yes" : "no"}</td>
+                  <td data-label="Recent events">{row.recent_events}</td>
+                  <td data-label="Latest event" className="muted small">
+                    {row.latest_event ? timeAgo(row.latest_event) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
 

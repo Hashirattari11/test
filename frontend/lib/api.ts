@@ -521,6 +521,7 @@ export type HealthIssue = {
   risk_score?: number | null;
   risk_factors?: string[] | null;
   repo_name?: string | null;
+  repo_full_name?: string | null;
 };
 
 export type HealthProviderScore = {
@@ -816,6 +817,27 @@ export const runFireDrill = (repoId: string, provider: string) =>
   request<ImpactAnalysis>(`/impact/fire-drill`, {
     method: "POST",
     body: JSON.stringify({ repo_id: repoId, provider }),
+  });
+
+export type FireDrillMatrixRow = {
+  provider: string;
+  status: "active" | "at_risk" | "unknown" | "inactive";
+  usage_detected: boolean;
+  recent_events: number;
+  latest_event?: string | null;
+};
+
+export type FireDrillMatrix = {
+  repo_id: string;
+  providers: FireDrillMatrixRow[];
+  total: number;
+  summary: { active: number; at_risk: number; unknown: number; inactive: number };
+};
+
+export const fireDrillMatrix = (repoId: string) =>
+  request<FireDrillMatrix>(`/impact/fire-drill-matrix`, {
+    method: "POST",
+    body: JSON.stringify({ repo_id: repoId }),
   });
 
 export const generateImpactFix = (analysisId: string, filePath?: string) =>

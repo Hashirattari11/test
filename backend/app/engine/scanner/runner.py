@@ -20,6 +20,7 @@ from ...config import settings
 from ...db import db
 from ...github_client import GitHubError, get_blob_text, list_repo_tree
 from ...detection import is_scannable_path
+from ...redact import redact_snippet
 from .ast_scan import scan_content, ScanHit
 from .project_detect import detect_project
 
@@ -47,7 +48,11 @@ def _add_event(scan_id: str, event_type: str, message: str) -> None:
 
 
 def _persist_findings(rows: list[dict]) -> int:
-    """Insert findings, de-duped in-memory by (file, line, message)."""
+    """Insert findings, de-duped in-memory by (file, line, message).
+
+    Every persisted snippet/usage/message is passed through redact_snippet so a
+    hardcoded secret on a matched line never lands in the database verbatim.
+    """
     seen: set[tuple] = set()
     cleaned: list[dict] = []
     for r in rows:
@@ -55,7 +60,10 @@ def _persist_findings(rows: list[dict]) -> int:
         if key in seen:
             continue
         seen.add(key)
-        cleaned.append(r)
+        cleaned_row = dict(r)
+        cleaned_row["current_usage"] = redact_snippet(r.get("current_usage"))
+        cleaned_row["message"] = redact_snippet(r.get("message"))
+        cleaned.append(cleaned_row)
     for i in range(0, len(cleaned), 200):
         db().table("findings").insert(cleaned[i : i + 200]).execute()
     return len(cleaned)
@@ -72,7 +80,7 @@ def _persist_api_detections(repo_id: str, hits: list[ScanHit]) -> None:
             "api_name": api_name,
             "file_path": h.file,
             "line_number": h.line,
-            "matched_snippet": h.snippet,
+            "matched_snippet": redact_snippet(h.snippet),
             "symbols": ",".join(h.symbols) if h.symbols else api_name,
         })
     for i in range(0, len(rows), 500):
@@ -139,6 +147,7 @@ def run_scan(scan_id: str, repo_id: str, full_name: str, branch: str, token: str
             "recommended_fix": None,
             "confidence": 0.9 if h.kind == "signature" else 0.75,
             "status": "open",
+            "verification_status": "detected",
             "tech": project.get("language"),
         })
 

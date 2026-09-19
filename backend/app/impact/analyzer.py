@@ -82,6 +82,47 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def compute_verification_status(
+    has_matches: bool,
+    matched_fields: list[str],
+    has_endpoint: bool,
+    has_sdk: bool,
+    change_type: str,
+) -> tuple[str, dict]:
+    """Evidence-based verification status for an impact analysis.
+
+    Never claims more than the evidence supports:
+      - ``verified``   only when a changelog event matched real repo usage AND
+                       the match is strong (endpoint and/or SDK matched, or the
+                       change is a hard removal/rename that the usage directly
+                       references).
+      - ``potential``  usage matched but version/endpoint specifics could not
+                       be confirmed (most common: no package manifest match).
+      - ``not_found``  no repository usage matched this changelog event.
+      - ``unknown``    the event itself could not be interpreted.
+
+    Returns (verification_status, verification_details).
+    """
+    field_set = set(matched_fields or [])
+    if change_type in ("", "none", "unknown"):
+        return "unknown", {"reason": "changelog event could not be interpreted"}
+
+    if not has_matches:
+        return "not_found", {"reason": "no repository usage matched this changelog event"}
+
+    details: dict = {
+        "matched_usages": len(field_set) or None,
+        "fields_matched": sorted(field_set),
+        "endpoint_match": bool(has_endpoint),
+        "sdk_match": bool(has_sdk),
+    }
+    strong_match = has_endpoint or has_sdk or change_type in ("removed", "renamed", "secret_leak")
+    if strong_match:
+        return "verified", details
+    details["reason"] = "usage matched but provider version/changed endpoint could not be confirmed"
+    return "potential", details
+
+
 def analyze_changelog_event(
     event: dict,
     repo_id: str,
@@ -154,7 +195,16 @@ def analyze_changelog_event(
         has_endpoint=any("endpoint" in r.matched_fields for _, r in matching_detections),
         has_sdk=bool(affected_sdks),
     )
-    
+
+    # Evidence-based verification status (never overclaims)
+    v_status, v_details = compute_verification_status(
+        has_matches=bool(matching_detections),
+        matched_fields=[f for _, r in matching_detections for f in r.matched_fields],
+        has_endpoint=any("endpoint" in r.matched_fields for _, r in matching_detections),
+        has_sdk=bool(affected_sdks),
+        change_type=change_type,
+    )
+
     # Build analysis
     analysis = ImpactAnalysis(
         repo_id=repo_id,
@@ -172,6 +222,8 @@ def analyze_changelog_event(
         impact_reason=_build_impact_reason(provider, change_type, len(matching_detections)),
         expected_behavior=_build_expected_behavior(change_type),
         potential_failure=_build_potential_failure(change_type, severity),
+        verification_status=v_status,
+        verification_details=v_details,
         created_at=_now_iso(),
     )
     
@@ -207,6 +259,8 @@ def analyze_repo_for_provider(
             severity="safe",
             confidence=0.9,
             impact_reason="No known provider changes detected",
+            verification_status="not_found",
+            verification_details={"reason": "no changelog events for provider"},
             detected_at=_now_iso(),
             created_at=_now_iso(),
         )

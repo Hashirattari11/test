@@ -70,6 +70,9 @@ export default function BreaksPage() {
                 </span>
                 <span className="issue-category">{issue.category}</span>
                 <span className="issue-provider">{issue.provider}</span>
+                {issue.repo_full_name && (
+                  <span className="issue-provider" style={{ opacity: 0.7 }}>{issue.repo_full_name}</span>
+                )}
                 {issue.risk_level && <span className={`issue-risk risk-${issue.risk_level}`}>Risk {issue.risk_level}</span>}
               </div>
               <h3 className="issue-title">{issue.title}</h3>

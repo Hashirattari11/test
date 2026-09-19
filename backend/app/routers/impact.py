@@ -39,6 +39,10 @@ class FireDrillRequest(BaseModel):
     provider: str
 
 
+class FireDrillMatrixRequest(BaseModel):
+    repo_id: str
+
+
 class GenerateFixRequest(BaseModel):
     analysis_id: str
     file_path: str | None = None  # Optional: specific file to fix
@@ -223,6 +227,98 @@ def fire_drill_endpoint(
     analysis.id = analysis_id
     
     return _to_response(analysis)
+
+
+@router.post("/fire-drill-matrix")
+def fire_drill_matrix_endpoint(
+    request: FireDrillMatrixRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
+    """Run a Fire Drill across ALL monitored providers for a repository.
+
+    Each provider is classified against real evidence only:
+      - active:   repo has real detected usage AND a recent changelog event
+      - at_risk:  repo has real detected usage but no recent event (usage exists,
+                  no known change yet)
+      - unknown:  provider events exist but no repo usage found
+      - inactive: no usage, no recent events
+
+    Never fabricates data: every classification is derived from the repo's own
+    api_detections and the changelog_events table.
+    """
+    _owned_repo(user_id, request.repo_id)
+
+    try:
+        from ..changelog.sources import PROVIDER_SOURCES
+        provider_ids = [p.id for p in PROVIDER_SOURCES]
+    except Exception:
+        # Fallback if the registry import path ever changes
+        from ..signatures import MONITORED_APIS
+        provider_ids = sorted(MONITORED_APIS)
+
+    # Historical window for "recent" changelog events (real timestamps).
+    from datetime import datetime, timedelta, timezone
+    recent_since = (datetime.now(timezone.utc) - timedelta(days=365)).isoformat()
+
+    rows_out: list[dict] = []
+    active = at_risk = unknown = inactive = 0
+
+    for pid in provider_ids:
+        detections_result = (
+            db()
+            .table("api_detections")
+            .select("id")
+            .eq("repo_id", request.repo_id)
+            .eq("api_name", pid)
+            .limit(1)
+            .execute()
+        )
+        has_usage = bool(detections_result.data)
+
+        events_result = (
+            db()
+            .table("changelog_events")
+            .select("id, severity, detected_at")
+            .eq("api_name", pid)
+            .gte("detected_at", recent_since)
+            .order("detected_at", desc=True)
+            .limit(5)
+            .execute()
+        )
+        events = events_result.data or []
+
+        if has_usage and events:
+            status = "active"
+            active += 1
+        elif has_usage:
+            status = "at_risk"
+            at_risk += 1
+        elif events:
+            status = "unknown"
+            unknown += 1
+        else:
+            status = "inactive"
+            inactive += 1
+
+        rows_out.append({
+            "provider": pid,
+            "status": status,
+            "usage_detected": has_usage,
+            "recent_events": len(events),
+            "latest_event": (events[0] or {}).get("detected_at"),
+        })
+
+    return {
+        "repo_id": request.repo_id,
+        "providers": rows_out,
+        "total": len(provider_ids),
+        "summary": {
+            "active": active,
+            "at_risk": at_risk,
+            "unknown": unknown,
+            "inactive": inactive,
+        },
+    }
 
 
 @router.post("/generate-fix", response_model=FixGenerationResponse)

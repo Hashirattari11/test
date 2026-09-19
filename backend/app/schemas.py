@@ -271,7 +271,7 @@ class FindingOut(BaseModel):
     scan_id: str | None = None
     repo_id: str
     severity: str  # critical | high | medium | low | info
-    type: str      # deprecated | removed | endpoint_changed | method_changed | param_removed | auth_changed | version_major_bump | http_client | api_usage | ...
+    type: str      # deprecated | removed | endpoint_changed | method_changed | param_removed | auth_changed | version_major_bump | http_client | api_usage | advisory | ...
     provider: str | None = None
     file: str
     line: int | None = None
@@ -280,6 +280,8 @@ class FindingOut(BaseModel):
     recommended_fix: str | None = None
     confidence: float | None = None  # 0.0 - 1.0
     status: str = "open"  # open | fixed | dismissed
+    verification_status: str | None = None  # detected | potential | verified | false_positive | unknown | resolved
+    evidence_url: str | None = None
     tech: str | None = None
     rule_id: str | None = None
     created_at: datetime | None = None
@@ -291,7 +293,9 @@ class FindingsListOut(BaseModel):
 
 
 class FindingUpdateIn(BaseModel):
-    status: str  # open | fixed | dismissed
+    status: str | None = None  # open | fixed | dismissed
+    verification_status: str | None = None  # detected | potential | verified | false_positive | unknown | resolved
+    evidence_url: str | None = None
 
 
 class PullRequestOut(BaseModel):

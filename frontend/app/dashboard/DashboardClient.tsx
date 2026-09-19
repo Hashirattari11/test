@@ -158,7 +158,7 @@ export default function DashboardClient() {
         ts: err.created_at,
         kind: "api_error",
         label: "API error detected",
-        detail: `${err.provider} · ${err.title}`,
+        detail: `${err.provider} · ${err.title}${err.repo_full_name ? ` · ${err.repo_full_name}` : ""}`,
         tone: err.severity === "critical" || err.severity === "high" ? "red" : "amber",
       });
     }
@@ -468,7 +468,9 @@ export default function DashboardClient() {
                 <span className={`mc-dot ${severityTone(iss.severity) === "red" ? "red" : severityTone(iss.severity) === "amber" ? "amber" : "gray"}`} />
                 <span style={{ minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   <span style={{ fontWeight: 600 }}>{iss.title}</span>{" "}
-                  <span style={{ fontSize: 12, color: "var(--muted)" }}>· {iss.provider}</span>
+                  <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                    · {iss.provider}{iss.repo_full_name ? ` · ${iss.repo_full_name}` : ""}
+                  </span>
                 </span>
                 <Badge tone={severityTone(iss.severity)} dot>{severityLabel(iss.severity)}</Badge>
                 <span className="mc-sub" style={{ whiteSpace: "nowrap" }}>{timeAgo(iss.created_at)}</span>

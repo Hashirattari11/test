@@ -38,6 +38,7 @@ CATEGORY_BY_CHANGE: dict[str, IssueCategory] = {
     "renamed": IssueCategory.CUSTOMER_CODE,
     "auth_changed": IssueCategory.CONFIGURATION,
     "secret_leak": IssueCategory.CONFIGURATION,
+    "advisory": IssueCategory.CUSTOMER_CODE,
     "dependency": IssueCategory.DEPENDENCY,
     "usage": IssueCategory.CUSTOMER_USAGE,
     "incident": IssueCategory.PROVIDER_INCIDENT,

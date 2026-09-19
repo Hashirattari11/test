@@ -100,7 +100,7 @@ RULES: list[BreakingRule] = [
         ),
         severity="medium",
         change_type="deprecated",
-        patterns=[r"\bcharges?\.create\(", r"\btokens?\.create\(", r"\bcharge\b"] ,
+        patterns=[r"\bcharges?\.create\(", r"\btokens?\.create\(", r"\bstripe\.charges\b", r"\bCharge\.retrieve\b"],
         confidence=0.7,
         recommended_fix="Migrate to Payment Intents: `stripe.paymentIntents.create({amount, currency, automatic_payment_methods})`.",
         source_url="https://docs.stripe.com/payments/payment-intents/migration",
@@ -188,7 +188,7 @@ RULES: list[BreakingRule] = [
             "double billing; confirm the intended store."
         ),
         severity="low",
-        change_type="endpoint_changed",
+        change_type="advisory",
         patterns=[r"firebase/database", r"getDatabase\s*\(", r"firebase/firestore"],
         confidence=0.5,
         recommended_fix="Keep a single realtime store (Firestore recommended) and remove the unused SDK import.",
@@ -226,10 +226,10 @@ RULES: list[BreakingRule] = [
         title="Raw HTTP call to provider API",
         description=(
             "Direct REST call(s) to a provider. SDKs track breaking changes; raw "
-            "calls break silently when endpoints/v1 -> /v2 move. Consider the SDK."
+            "calls break silently when endpoints move. Advisable to use the SDK."
         ),
         severity="low",
-        change_type="endpoint_changed",
+        change_type="advisory",
         patterns=[r"\baxios\.(get|post|put|patch|delete)\s*\(", r"\bfetch\s*\(\s*['\"](?:https?://)?[^'\"]*(api|graphql)"],
         confidence=0.6,
         recommended_fix="Use the provider's official SDK so Breaklytix-style monitors and migrations apply cleanly.",

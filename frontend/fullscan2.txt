@@ -1,0 +1,31 @@
+MARKERS:
+  Compiled successfully            1
+  Failed to compile                0
+  Type error                       0
+  prerender-error                  0
+  Missing Suspense                 0
+  missing-suspense                 0
+  Export encountered               0
+  Error occurred prerendering      0
+  \u2713                                0
+  Generating static pages          5
+  First Load JS                    2
+  /dashboard                       32
+
+DASHBOARD_ROUTES (lines):
+
+LAST 14:
+   | \u0393\xf6\xa3 \u0393\xf9\xef /sitemap.xml                         0 B                0 B
+   | \u0393\xf6\xf6 \u0393\xf9\xef /terms                               198 B          94.2 kB
+   | + First Load JS shared by all            87.2 kB
+   |   \u0393\xf6\xa3 chunks/2117-305c0782e78a361e.js      31.6 kB
+   |   \u0393\xf6\xa3 chunks/fd9d1056-4a097619cae40cd6.js  53.6 kB
+   |   \u0393\xf6\xf6 other shared chunks (total)          1.95 kB
+   | 
+   | 
+   | \u255e\xc6 Middleware                             26.8 kB
+   | 
+   | \u0393\xf9\xef  (Static)   prerendered as static content
+   | \u0393\xf9\xc5  (SSG)      prerendered as static HTML (uses getStaticProps)
+   | \u255e\xc6  (Dynamic)  server-rendered on demand
+   | 

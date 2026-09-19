@@ -1,0 +1,8 @@
+EXIT=0 DURATION_S=161 LINES=88
+PRERENDER_SUSPENSE_LINES=2
+DISTINCT_DASHBOARD_PATHS:
+LAST_TEN:
+   | ?  (Static)   prerendered as static content
+   | ?  (SSG)      prerendered as static HTML (uses getStaticProps)
+COMPILED=yes
+ALLDONE

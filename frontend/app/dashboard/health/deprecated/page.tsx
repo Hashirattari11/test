@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useCallback, useEffect, useMemo, useState, Suspense} from "react";
 import { useSearchParams } from "next/navigation";
 import RepositorySelector from "../../../../components/RepositorySelector";
 import {
@@ -17,7 +19,7 @@ const SEVERITY_COLOR: Record<string, string> = {
   low: "#84cc16",
 };
 
-export default function DeprecatedPage() {
+function DeprecatedPage() {
   const searchParams = useSearchParams();
   const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
@@ -142,4 +144,8 @@ export default function DeprecatedPage() {
       )}
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense fallback={<div />}><DeprecatedPage /></Suspense>;
 }

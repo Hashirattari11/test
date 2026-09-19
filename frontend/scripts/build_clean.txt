@@ -1,0 +1,150 @@
+  ▲ Next.js 14.2.15
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+   Generating static pages (0/83) ...
+   Generating static pages (20/83) 
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/health/anomalies". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at h (D:\autofix\frontend\.next\server\app\dashboard\health\anomalies\page.js:1:2509)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/health/anomalies". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/health/breaks". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at h (D:\autofix\frontend\.next\server\app\dashboard\health\breaks\page.js:1:2552)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/health/breaks". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/health/deprecated". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at c (D:\autofix\frontend\.next\server\app\dashboard\health\deprecated\page.js:1:2565)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/health/deprecated". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/health/errors". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at h (D:\autofix\frontend\.next\server\app\dashboard\health\errors\page.js:1:2565)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/health/errors". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/health/failures". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at c (D:\autofix\frontend\.next\server\app\dashboard\health\failures\page.js:1:2569)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/health/failures". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/health/sdk". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at c (D:\autofix\frontend\.next\server\app\dashboard\health\sdk\page.js:1:2539)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/health/sdk". Read more: https://nextjs.org/docs/messages/prerender-error
+
+   Generating static pages (41/83) 
+   Generating static pages (62/83) 
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/alerts". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at u (D:\autofix\frontend\.next\server\app\dashboard\alerts\page.js:1:2459)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/alerts". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/health/issues". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at p (D:\autofix\frontend\.next\server\app\dashboard\health\issues\page.js:1:2773)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/health/issues". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/dashboard/impact". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at a (D:\autofix\frontend\.next\server\chunks\1231.js:1:11190)
+    at c (D:\autofix\frontend\.next\server\chunks\1231.js:1:22130)
+    at m (D:\autofix\frontend\.next\server\app\dashboard\impact\page.js:1:2623)
+    at nj (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+    at nM (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (D:\autofix\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+
+Error occurred prerendering page "/dashboard/impact". Read more: https://nextjs.org/docs/messages/prerender-error
+
+ ✓ Generating static pages (83/83)
+
+> Export encountered errors on following paths:
+	/dashboard/alerts/page: /dashboard/alerts
+	/dashboard/health/anomalies/page: /dashboard/health/anomalies
+	/dashboard/health/breaks/page: /dashboard/health/breaks
+	/dashboard/health/deprecated/page: /dashboard/health/deprecated
+	/dashboard/health/errors/page: /dashboard/health/errors
+	/dashboard/health/failures/page: /dashboard/health/failures
+	/dashboard/health/issues/page: /dashboard/health/issues
+	/dashboard/health/sdk/page: /dashboard/health/sdk
+	/dashboard/impact/page: /dashboard/impact

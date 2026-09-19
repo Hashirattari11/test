@@ -1,0 +1,88 @@
+  ▲ Next.js 14.2.15
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+   Generating static pages (0/83) ...
+   Generating static pages (20/83) 
+   Generating static pages (41/83) 
+   Generating static pages (62/83) 
+ ✓ Generating static pages (83/83)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    7.73 kB         108 kB
+├ ○ /_not-found                          146 B          87.3 kB
+├ ○ /acceptable-use                      198 B          94.2 kB
+├ ○ /admin                               2.92 kB         102 kB
+├ ○ /admin/alerts/pending                6.1 kB          100 kB
+├ ○ /admin/health                        5.63 kB        99.6 kB
+├ ○ /admin/users                         5.56 kB        99.5 kB
+├ ○ /auth/callback                       4.17 kB        98.2 kB
+├ ○ /auth/github                         3.93 kB        97.9 kB
+├ ƒ /authorize/[token]                   3.85 kB        97.8 kB
+├ ○ /contact                             198 B          94.2 kB
+├ ○ /cookies                             198 B          94.2 kB
+├ ○ /dashboard                           4.49 kB         104 kB
+├ ○ /dashboard/agency                    6.44 kB         100 kB
+├ ○ /dashboard/alerts                    3.7 kB          103 kB
+├ ○ /dashboard/billing                   6.8 kB          101 kB
+├ ○ /dashboard/changelog                 5.26 kB         105 kB
+├ ƒ /dashboard/changelog/[id]            4.92 kB         105 kB
+├ ○ /dashboard/cli                       6.8 kB           94 kB
+├ ○ /dashboard/health                    5.69 kB        99.7 kB
+├ ○ /dashboard/health/anomalies          6.25 kB         100 kB
+├ ○ /dashboard/health/auto-fix           6.09 kB         100 kB
+├ ○ /dashboard/health/breaks             5.18 kB        99.2 kB
+├ ○ /dashboard/health/code-usage         4.32 kB        91.5 kB
+├ ○ /dashboard/health/deprecated         5.02 kB        92.2 kB
+├ ○ /dashboard/health/errors             5.28 kB        99.3 kB
+├ ○ /dashboard/health/failures           5.06 kB        92.2 kB
+├ ○ /dashboard/health/incidents          5.57 kB        99.6 kB
+├ ○ /dashboard/health/issues             5.46 kB        99.4 kB
+├ ƒ /dashboard/health/issues/[id]        4.81 kB        98.8 kB
+├ ○ /dashboard/health/rate-limit-events  5.72 kB        99.7 kB
+├ ○ /dashboard/health/scanner            6.18 kB         100 kB
+├ ○ /dashboard/health/sdk                4.87 kB          92 kB
+├ ○ /dashboard/impact                    4.25 kB         104 kB
+├ ƒ /dashboard/impact/[id]               3.98 kB         103 kB
+├ ○ /dashboard/impact/fire-drill         4.41 kB         104 kB
+├ ○ /dashboard/onboarding                6.3 kB          100 kB
+├ ○ /dashboard/providers                 4.82 kB         105 kB
+├ ○ /dashboard/repos                     5.35 kB        99.3 kB
+├ ƒ /dashboard/repos/[id]                8.35 kB         102 kB
+├ ƒ /dashboard/repos/[id]/fixes          6.46 kB         100 kB
+├ ○ /dashboard/settings                  7.1 kB          107 kB
+├ ○ /dashboard/settings/api-keys         4 kB             98 kB
+├ ○ /dashboard/settings/integrations     3.9 kB         97.9 kB
+├ ○ /docs                                7.93 kB        95.1 kB
+├ ● /docs/[slug]                         146 B          87.3 kB
+├   ├ /docs/overview
+├   ├ /docs/quickstart
+├   ├ /docs/sign-in
+├   └ [+30 more paths]
+├ ○ /icon.svg                            0 B                0 B
+├ ○ /legal-acceptance                    5.81 kB        99.8 kB
+├ ○ /login                               2 kB             96 kB
+├ ƒ /opengraph-image                     0 B                0 B
+├ ○ /pricing                             5.49 kB        99.5 kB
+├ ○ /privacy                             198 B          94.2 kB
+├ ○ /robots.txt                          0 B                0 B
+├ ○ /security                            198 B          94.2 kB
+├ ○ /sitemap.xml                         0 B                0 B
+└ ○ /terms                               198 B          94.2 kB
++ First Load JS shared by all            87.2 kB
+  ├ chunks/2117-305c0782e78a361e.js      31.6 kB
+  ├ chunks/fd9d1056-4a097619cae40cd6.js  53.6 kB
+  └ other shared chunks (total)          1.95 kB
+
+
+ƒ Middleware                             26.8 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses getStaticProps)
+ƒ  (Dynamic)  server-rendered on demand
+

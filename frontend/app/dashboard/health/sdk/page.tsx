@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useCallback, useEffect, useState, Suspense} from "react";
 import { useSearchParams } from "next/navigation";
 import RepositorySelector from "../../../../components/RepositorySelector";
 import { getHealthIssues, HealthIssue } from "../../../../lib/api";
@@ -13,7 +15,7 @@ const SEVERITY_COLOR: Record<string, string> = {
   info: "#6b7280",
 };
 
-export default function SdkPage() {
+function SdkPage() {
   const searchParams = useSearchParams();
   const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
@@ -81,4 +83,8 @@ export default function SdkPage() {
       )}
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense fallback={<div />}><SdkPage /></Suspense>;
 }

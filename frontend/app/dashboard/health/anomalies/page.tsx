@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useCallback, useEffect, useMemo, useState, Suspense} from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import RepositorySelector from "../../../../components/RepositorySelector";
 import { getHealthAnomalies, HealthIssue } from "../../../../lib/api";
 import { formatDate } from "../../../../components/ui";
 
-export default function AnomaliesPage() {
+function AnomaliesPage() {
   const searchParams = useSearchParams();
   const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
@@ -103,4 +105,8 @@ export default function AnomaliesPage() {
       )}
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense fallback={<div />}><AnomaliesPage /></Suspense>;
 }

@@ -1,0 +1,11 @@
+﻿LINES: 150
+PRERENDER_LINES: 9
+  >> Error occurred prerendering page "/dashboard/health/anomalies". Read more: https://nextjs.org/docs/messages/prerender-error
+  >> Error occurred prerendering page "/dashboard/health/breaks". Read more: https://nextjs.org/docs/messages/prerender-error
+  >> Error occurred prerendering page "/dashboard/health/deprecated". Read more: https://nextjs.org/docs/messages/prerender-error
+  >> Error occurred prerendering page "/dashboard/health/errors". Read more: https://nextjs.org/docs/messages/prerender-error
+  >> Error occurred prerendering page "/dashboard/health/failures". Read more: https://nextjs.org/docs/messages/prerender-error
+  >> Error occurred prerendering page "/dashboard/health/sdk". Read more: https://nextjs.org/docs/messages/prerender-error
+  >> Error occurred prerendering page "/dashboard/alerts". Read more: https://nextjs.org/docs/messages/prerender-error
+  >> Error occurred prerendering page "/dashboard/health/issues". Read more: https://nextjs.org/docs/messages/prerender-error
+  >> Error occurred prerendering page "/dashboard/impact". Read more: https://nextjs.org/docs/messages/prerender-error

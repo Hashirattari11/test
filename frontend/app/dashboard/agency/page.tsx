@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -25,7 +27,7 @@ type AgencyStatus = {
   pending_count: number;
 };
 
-export default function AgencyPage() {
+function AgencyPage() {
   return (
     <Suspense fallback={<div style={{ padding: "0 24px 64px", maxWidth: 1200, margin: "0 auto" }}><div style={{ textAlign: "center", padding: 80 }}><Spinner /> <span style={{ marginLeft: 8, color: "var(--muted)" }}>Loading...</span></div></div>}>
       <AgencyPageContent />
@@ -386,4 +388,8 @@ function AgencyPageContent() {
       </div>
     </>
   );
+}
+
+export default function Page() {
+  return <Suspense fallback={<div />}><AgencyPage /></Suspense>;
 }

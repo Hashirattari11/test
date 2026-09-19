@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useCallback, useEffect, useState, Suspense} from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import RepositorySelector from "../../../../components/RepositorySelector";
@@ -47,7 +49,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   unknown: "Unknown",
 };
 
-export default function IssuesPage() {
+function IssuesPage() {
   const searchParams = useSearchParams();
   const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -181,4 +183,8 @@ function IssueCard({ issue }: { issue: Issue }) {
       )}
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense fallback={<div />}><IssuesPage /></Suspense>;
 }

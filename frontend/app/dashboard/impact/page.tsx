@@ -1,6 +1,8 @@
-﻿"use client";
+"use client";
 
-import { useCallback, useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useCallback, useEffect, useState, Suspense} from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -23,7 +25,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   unknown: "var(--muted, #6b7280)",
 };
 
-export default function ImpactPage() {
+function ImpactPage() {
   const searchParams = useSearchParams();
   const repositoryId = searchParams.get("repository_id") ?? "";
   const [summary, setSummary] = useState<ImpactSummary | null>(null);
@@ -280,4 +282,8 @@ function SummaryCard({ label, value, color }: { label: string; value: string; co
       <div className="muted small" style={{ textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{label}</div>
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense fallback={<div />}><ImpactPage /></Suspense>;
 }

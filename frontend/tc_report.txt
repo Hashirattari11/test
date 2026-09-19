@@ -1,0 +1,24 @@
+SEARCHED: 51 page.tsx under app/
+  == already wrapped: app\dashboard\agency\page.tsx
+  ALREADY  app\dashboard\agency\page.tsx
+  == already wrapped: app\dashboard\alerts\page.tsx
+  ALREADY  app\dashboard\alerts\page.tsx
+  == already wrapped: app\dashboard\health\anomalies\page.tsx
+  ALREADY  app\dashboard\health\anomalies\page.tsx
+  == already wrapped: app\dashboard\health\breaks\page.tsx
+  ALREADY  app\dashboard\health\breaks\page.tsx
+  == already wrapped: app\dashboard\health\deprecated\page.tsx
+  ALREADY  app\dashboard\health\deprecated\page.tsx
+  == already wrapped: app\dashboard\health\errors\page.tsx
+  ALREADY  app\dashboard\health\errors\page.tsx
+  == already wrapped: app\dashboard\health\failures\page.tsx
+  ALREADY  app\dashboard\health\failures\page.tsx
+  == already wrapped: app\dashboard\health\issues\page.tsx
+  ALREADY  app\dashboard\health\issues\page.tsx
+  == already wrapped: app\dashboard\health\sdk\page.tsx
+  ALREADY  app\dashboard\health\sdk\page.tsx
+  == already wrapped: app\dashboard\impact\page.tsx
+  ALREADY  app\dashboard\impact\page.tsx
+  == already wrapped: app\dashboard\settings\integrations\page.tsx
+  ALREADY  app\dashboard\settings\integrations\page.tsx
+PAGES_WRAPPED=0

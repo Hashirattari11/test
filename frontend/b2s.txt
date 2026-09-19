@@ -1,0 +1,5 @@
+LINES=94
+RELEVANT=2
+  | \u0393\xf9\xef  (Static)   prerendered as static content
+  | \u0393\xf9\xc5  (SSG)      prerendered as static HTML (uses getStaticProps)
+DONE

@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -159,7 +161,7 @@ function IntegrationsContent() {
   );
 }
 
-export default function SlackIntegrationsPage() {
+function SlackIntegrationsPage() {
   return (
     <Suspense fallback={
       <main className="container page" style={{ paddingTop: 60, textAlign: "center" }}>
@@ -169,4 +171,8 @@ export default function SlackIntegrationsPage() {
       <IntegrationsContent />
     </Suspense>
   );
+}
+
+export default function Page() {
+  return <Suspense fallback={<div />}><SlackIntegrationsPage /></Suspense>;
 }

@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useCallback, useEffect, useState, Suspense} from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertWithRepo, listAllAlerts, updateAlertStatus } from "@/lib/api";
@@ -9,7 +11,7 @@ import RepositorySelector from "@/components/RepositorySelector";
 import { formatDate, SeverityBadge, Spinner } from "@/components/ui";
 import { ErrorCard, PageHeader } from "@/components/dashboard-ui";
 
-export default function AlertsPage() {
+function AlertsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const repositoryId = searchParams.get("repository_id") ?? "";
@@ -207,4 +209,8 @@ export default function AlertsPage() {
       </section>
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense fallback={<div />}><AlertsPage /></Suspense>;
 }

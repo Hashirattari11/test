@@ -215,6 +215,18 @@ export default function LandingPage() {
           font-family: var(--font-mono); font-size: 13px; line-height: 1.7;
           color: #e4e4e7; white-space: pre;
         }
+        /* The global inline-code chip style (light background) must not leak
+           into the dark hero code demo — light-on-light made it unreadable.
+           The .lp-code-window prefix out-specifies both the light chip rule
+           and the :root[data-theme="dark"] variant. */
+        .lp-code-window .lp-code-content code {
+          background: transparent;
+          padding: 0;
+          border-radius: 0;
+          font-size: inherit;
+          font-family: inherit;
+          color: inherit;
+        }
         .lp-scroll-top {
           position: fixed; bottom: 24px; right: 24px; width: 44px; height: 44px;
           border-radius: 50%; background: var(--accent); color: white; border: none;

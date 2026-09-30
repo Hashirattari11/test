@@ -287,7 +287,9 @@ def migrate_digital_twin() -> dict:
     """
     from pathlib import Path
 
-    sql_path = Path(__file__).resolve().parents[3] / "db" / "migration_digital_twin.sql"
+    # Bundled copy inside the backend package — repo-root db/ is NOT part of
+    # the Vercel deployment. Kept in sync with db/migration_digital_twin.sql.
+    sql_path = Path(__file__).resolve().parents[1] / "migrations" / "migration_digital_twin.sql"
     statements: list[str] = []
     if sql_path.exists():
         raw = sql_path.read_text(encoding="utf-8")

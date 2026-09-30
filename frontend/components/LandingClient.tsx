@@ -282,7 +282,7 @@ export default function LandingPage() {
             <div style={{ opacity: hero.visible ? 1 : 0, transform: hero.visible ? "translateY(0)" : "translateY(32px)", transition: "all 0.7s ease" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(99,91,255,0.15)", border: "1px solid rgba(99,91,255,0.3)", color: "#a78bfa", fontSize: 13, fontWeight: 600, marginBottom: 24 }}>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399", animation: "pulse 2s infinite" }} />
-                Monitors 12 provider changelogs daily
+                Monitors 44 provider changelogs daily
               </div>
               <h1 style={{ fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 800, lineHeight: 1.1, margin: "0 0 24px", letterSpacing: "-0.02em", color: "white" }}>
                 Stop losing <span style={{ background: "linear-gradient(135deg, #a78bfa, #06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>40 hours</span> every time{" "}
@@ -477,7 +477,7 @@ const intent = await stripe.paymentIntents.create({
             <div className="lp-cta-glow" />
             <div style={{ position: "relative", zIndex: 1, maxWidth: 600, margin: "0 auto" }}>
               <h2 style={{ fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 800, color: "white", margin: "0 0 16px", lineHeight: 1.2 }}>Ready to stop losing hours to API breaking changes?</h2>
-              <p style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", margin: "0 0 32px", lineHeight: 1.6 }}>Monitor 12 provider changelogs, detect 44+ API usage patterns, and auto-fix breaking changes — no fabricated metrics.</p>
+              <p style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", margin: "0 0 32px", lineHeight: 1.6 }}>Monitor 44 provider changelogs, detect 44+ API usage patterns, and auto-fix breaking changes — no fabricated metrics.</p>
                <Link href="/dashboard" className="btn btn-primary btn-lg lp-glow-btn" style={{ fontSize: 16, padding: "16px 36px", background: "linear-gradient(135deg, var(--accent), #7c3aed)", border: "none", borderRadius: 12 }}>
                 Get started — it&apos;s free
               </Link>

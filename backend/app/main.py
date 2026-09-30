@@ -14,7 +14,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
 from .deps import require_internal_secret
-from .routers import auth, billing, cli, fixes, internal, repos, slack, public_api, agency, admin, health, notifications, impact, consent
+from .routers import auth, billing, cli, fixes, internal, repos, slack, public_api, agency, admin, health, notifications, impact, consent, digital_twin
 from .routers.admin import router as admin_router
 from .changelog.router import router as changelog_router
 
@@ -146,6 +146,7 @@ app.include_router(admin_router)
 app.include_router(health.router)
 app.include_router(notifications.router)
 app.include_router(impact.router)
+app.include_router(digital_twin.router)
 
 
 @app.get("/", tags=["meta"])

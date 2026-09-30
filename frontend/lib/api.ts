@@ -860,3 +860,87 @@ export type ImpactFix = {
   confidence: number;
   description: string;
 };
+
+// ---- API Digital Twin ----
+// Simulates real provider changelog events against ONE repository's real
+// scanned usage. Static analysis only — labels never claim production is
+// failing. affected_file/symbol/line come from real scan evidence; null means
+// "evidence not available", never a guess.
+
+export type TwinFinding = {
+  api_detection_id?: string | null;
+  affected_file?: string | null;
+  affected_symbol?: string | null;
+  line_number?: number | null;
+  usage_context?: string | null;
+  explanation?: string | null;
+  recommended_change?: string | null;
+  severity?: string;      // breaking | high | medium | low | safe | unknown
+  confidence?: number;    // 0.0 - 1.0
+  impact_status?: string; // NO MATCH | SAFE | POTENTIAL IMPACT | HIGH RISK | BREAKING RISK | UNKNOWN
+  matched_fields?: string[];
+};
+
+export type TwinRunResponse = {
+  run_id?: string | null;
+  repository_id: string;
+  provider_filter?: string | null;
+  events_considered: number;
+  analyses_created: number;
+  no_match_count: number;
+  alerts_created: number;
+  email_status?: string;   // sent | failed | skipped_* | not_attempted
+  email_detail?: string | null;
+  last_simulated_at?: string | null;
+  findings: TwinFinding[];
+};
+
+export type TwinAnalysis = {
+  id: string;
+  repository_id: string;
+  provider_id: string;
+  change_event_id: string;
+  impact_status: string;
+  severity: string;
+  confidence: number;
+  affected_file?: string | null;
+  affected_symbol?: string | null;
+  line_number?: number | null;
+  usage_context?: string | null;
+  explanation: string;
+  recommended_change?: string | null;
+  source_url?: string | null;
+  api_detection_id?: string | null;
+  alert_id?: string | null;
+  run_id?: string | null;
+  created_at?: string | null;
+};
+
+export type TwinSummary = {
+  repository_id: string;
+  provider_changes: number;
+  affected_usages: number;
+  potential_breaks: number;
+  high_risk: number;
+  breaking_risk: number;
+  safe: number;
+  by_status: Record<string, number>;
+  providers: string[];
+  last_simulation?: string | null;
+  last_run?: Record<string, unknown> | null;
+};
+
+export const getTwinSummary = (repoId: string) =>
+  request<TwinSummary>(`/digital-twin/${repoId}/summary`);
+
+export const getTwinAnalyses = (repoId: string, limit = 100) =>
+  request<TwinAnalysis[]>(`/digital-twin/${repoId}/analyses?limit=${limit}`);
+
+export const runTwinSimulation = (repoId: string, provider?: string, changelogEventId?: string) =>
+  request<TwinRunResponse>(`/digital-twin/${repoId}/simulate`, {
+    method: "POST",
+    body: JSON.stringify({
+      provider: provider || null,
+      changelog_event_id: changelogEventId || null,
+    }),
+  });

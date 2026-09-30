@@ -69,8 +69,28 @@ def calculate_impact_severity(
 
 
 def _severity_from_change_type(change_type: str) -> str:
-    """Get base severity from change type."""
+    """Get base severity from change type.
+
+    Real changelog_events rows store the UPPERCASE classify CHANGE_TYPES enum
+    (BREAKING_CHANGE, DEPRECATION, ...); legacy/fixture rows may use the old
+    lowercase verbs. Both must map — otherwise every real event degraded to
+    "unknown" severity.
+    """
     severity_map = {
+        # Current classify enum (what production rows actually contain)
+        "BREAKING_CHANGE": "breaking",
+        "DEPRECATION": "high",
+        "API_VERSION_CHANGE": "medium",
+        "ENDPOINT_CHANGE": "medium",
+        "REQUEST_SCHEMA_CHANGE": "medium",
+        "RESPONSE_SCHEMA_CHANGE": "medium",
+        "AUTH_CHANGE": "high",
+        "SECURITY_CHANGE": "high",
+        "RATE_LIMIT_CHANGE": "low",
+        "BEHAVIOR_CHANGE": "medium",
+        "SDK_CHANGE": "medium",
+        "MODEL_CHANGE": "low",
+        # Legacy/fixture verbs
         "removed": "breaking",
         "deprecated": "high",
         "renamed": "medium",
@@ -80,7 +100,9 @@ def _severity_from_change_type(change_type: str) -> str:
         "breaking": "breaking",
         "none": "safe",
     }
-    return severity_map.get(change_type, "unknown")
+    ct = (change_type or "").strip()
+    # Legacy/fixture rows use lowercase verbs; production rows use UPPERCASE.
+    return severity_map.get(ct) or severity_map.get(ct.upper()) or severity_map.get(ct.lower(), "unknown")
 
 
 def _adjust_severity(

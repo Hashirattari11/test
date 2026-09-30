@@ -124,7 +124,10 @@ def match_event_to_detection(
     Returns:
         MatchResult with confidence level and evidence
     """
-    provider = event.get("provider", "")
+    # Real changelog_events rows store the provider in `api_name` (the
+    # `provider` key only exists on in-memory fixtures). Accept both so the
+    # matcher works against REAL database rows, not just test dicts.
+    provider = event.get("provider") or event.get("api_name") or ""
     matched_fields = []
     evidence = []
     
@@ -154,9 +157,16 @@ def match_event_to_detection(
             break
     
     # 4. Symbol/function match
-    event_symbols = set()
-    if event.get("symbols"):
-        event_symbols = {s.lower() for s in event["symbols"] if s}
+    # DB rows store `symbols` as a comma-separated string; fixtures may pass a
+    # list. Iterating a raw string would yield single CHARACTERS (false or
+    # missed matches) — normalize both shapes to a lowercase token set.
+    symbols_raw = event.get("symbols")
+    if isinstance(symbols_raw, str):
+        event_symbols = {s.strip().lower() for s in symbols_raw.split(",") if s.strip()}
+    elif symbols_raw:
+        event_symbols = {str(s).strip().lower() for s in symbols_raw if s}
+    else:
+        event_symbols = set()
     
     if event_symbols and snippet:
         for symbol in event_symbols:

@@ -53,6 +53,7 @@ const CODE_BREAK_DETECTION: NavItem[] = [
 ];
 
 const IMPACT_ENGINE: NavItem[] = [
+  { name: "API Digital Twin", href: "/dashboard/digital-twin", icon: Icon(<ImpactIconSVG />) },
   { name: "Impact Overview", href: "/dashboard/impact", icon: Icon(<ImpactIconSVG />) },
   { name: "Fire Drill", href: "/dashboard/impact/fire-drill", icon: Icon(<FireDrillIconSVG />) },
 ];

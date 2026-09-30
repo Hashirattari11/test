@@ -55,7 +55,14 @@ function DeprecatedPage() {
   useEffect(load, [load]);
 
   const engineFindings = useMemo(
-    () => issues.filter((i) => i.category === "configuration" || i.category === "dependency"),
+    () => issues.filter((i) => {
+      if (i.category === "configuration" || i.category === "dependency") return true;
+      // Scanner rules classify deprecated API usage as customer_code. Keep
+      // unrelated rename/advisory findings out of this dedicated view.
+      return i.category === "customer_code" && /deprecat|no longer supported|removed|retir/i.test(
+        `${i.title} ${i.description}`
+      );
+    }),
     [issues]
   );
 
@@ -85,7 +92,7 @@ function DeprecatedPage() {
 
       <h2 style={{ fontSize: 18, margin: "8px 0" }}>Engine findings ({engineFindings.length})</h2>
       {engineFindings.length === 0 ? (
-        <p style={{ opacity: 0.6 }}>No configuration/dependency findings for this repository.</p>
+          <p style={{ opacity: 0.6 }}>No deprecated API or dependency findings for this repository.</p>
       ) : (
         <div className="issues-list">
           {engineFindings.map((issue) => (

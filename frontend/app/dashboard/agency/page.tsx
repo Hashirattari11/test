@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { Spinner } from "@/components/ui";
+import RepositorySelector from "../../../components/RepositorySelector";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -38,6 +39,7 @@ function AgencyPage() {
 function AgencyPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [status, setStatus] = useState<AgencyStatus | null>(null);
   const [clients, setClients] = useState<AgencyClient[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,15 +58,16 @@ function AgencyPageContent() {
       setSuccess("GitHub App installed successfully! Repos are being synced.");
     }
     load();
-  }, [router, searchParams]);
+  }, [router, searchParams, repositoryId]);
 
   async function load() {
     setLoading(true);
     try {
       const token = localStorage.getItem("autofix_token");
+      const repoQuery = repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : "";
       const [statusRes, clientsRes] = await Promise.all([
-        fetch(`${API_BASE}/agency/status`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_BASE}/agency/clients`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/agency/status${repoQuery}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/agency/clients${repoQuery}`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       if (statusRes.ok) setStatus(await statusRes.json());
       if (clientsRes.ok) setClients(await clientsRes.json());
@@ -214,6 +217,10 @@ function AgencyPageContent() {
               {showInvite ? "Cancel" : "+ Invite Client"}
             </button>
           </div>
+        </div>
+
+        <div style={{ margin: "16px 0" }}>
+          <RepositorySelector />
         </div>
 
         {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}

@@ -268,7 +268,16 @@ class ProviderAdapter:
     def _get(self, url: str, headers: dict | None = None) -> requests.Response:
         self._assert_allowed_url(url)
         try:
-            resp = self.session.get(url, timeout=20, headers=headers or {})
+            # Per-request timeout must stay below the scheduler's per-provider
+            # hard cap (FETCH_TIMEOUT_SECONDS) — a request that waits longer
+            # than the cap wastes the whole run's remaining budget.
+            from . import scheduler
+
+            try:
+                http_timeout = max(int(scheduler.FETCH_TIMEOUT_SECONDS) - 2, 5)
+            except Exception:  # pragma: no cover — defensive fallback
+                http_timeout = 8
+            resp = self.session.get(url, timeout=http_timeout, headers=headers or {})
             resp.raise_for_status()
             return resp
         except requests.RequestException as e:

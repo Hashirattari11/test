@@ -17,6 +17,18 @@ function statusBadge(status?: string) {
       return <span className="pill pill-gray">Source Unavailable</span>;
     case "ERROR":
       return <span className="pill pill-red">Error</span>;
+    case "TIMED_OUT":
+      return <span className="pill pill-amber">Timed Out</span>;
+    case "SOURCE_NOT_FOUND":
+      return <span className="pill pill-red">Source Not Found</span>;
+    case "ACCESS_BLOCKED":
+      return <span className="pill pill-red">Access Blocked</span>;
+    case "RATE_LIMITED":
+      return <span className="pill pill-amber">Rate Limited</span>;
+    case "PARSER_ERROR":
+      return <span className="pill pill-red">Parser Error</span>;
+    case "TEMPORARILY_UNAVAILABLE":
+      return <span className="pill pill-amber">Temporarily Unavailable</span>;
     default:
       return <span className="pill pill-gray">{status || "Unknown"}</span>;
   }
@@ -69,11 +81,15 @@ export default function ProvidersPage() {
     <div className="page">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
         <div>
-          <h1 style={{ marginBottom: 4 }}>Provider Monitoring Matrix</h1>
+          <h1 style={{ marginBottom: 4 }}>Provider Monitoring (Global)</h1>
           <p className="muted small" style={{ margin: 0 }}>
-            Health of official-source monitoring across all 44 registered providers.
-            ACTIVE = machine-readable feed, LIMITED = official page with strict extraction,
-            SOURCE_UNAVAILABLE = no official change feed exists, ERROR = last fetch failed.
+            Global provider status shared across repositories. This matrix is
+            provider-global by design — it monitors the provider itself, not any
+            single repository. Status reflects the latest fetch: ACTIVE found
+            entries, LIMITED completed with no entries, and failure badges show
+            the actual reason (such as timeout, missing source, or rate limit).
+            Repository-scoped data (errors, failures, findings, impact) lives
+            under each repository.
           </p>
         </div>
         <Link className="btn btn-secondary" href="/dashboard/changelog">

@@ -10,7 +10,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from ..alerts import render_alert_email
 from ..db import db, fetch_one
@@ -20,6 +21,15 @@ from ..config import settings
 from ..signatures import MONITORED_APIS, PLANNED_APIS
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
+
+
+class UserStatusUpdate(BaseModel):
+    suspended: bool
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class UserPlanUpdate(BaseModel):
+    plan: str = Field(min_length=1, max_length=40)
 
 
 def _now_iso() -> str:
@@ -222,16 +232,71 @@ def system_health() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Users (read-only)
+# Users and repository management
 # ---------------------------------------------------------------------------
 @router.get("/users")
-def admin_users(limit: int = 200) -> dict:
+def admin_users(
+    limit: int = Query(200, ge=1, le=500),
+    search: str | None = Query(None, max_length=120),
+    status: str | None = Query(None, pattern="^(active|suspended)$"),
+) -> dict:
     rows = (
         db()
         .table("users")
-        .select("id,email,github_login,plan,is_admin,is_agency,created_at")
+        .select("id,email,github_login,plan,is_admin,is_agency,created_at,is_suspended,suspended_at,suspended_reason")
         .order("created_at", desc=True)
         .limit(limit)
         .execute()
     )
-    return {"users": rows.data or []}
+    users = rows.data or []
+    needle = (search or "").strip().lower()
+    if needle:
+        users = [u for u in users if needle in str(u.get("email") or "").lower() or needle in str(u.get("github_login") or "").lower()]
+    if status:
+        users = [u for u in users if ("suspended" if u.get("is_suspended") else "active") == status]
+
+    user_ids = [u.get("id") for u in users if u.get("id")]
+    repos_by_user: dict[str, list[dict]] = {uid: [] for uid in user_ids}
+    if user_ids:
+        repos = db().table("repos").select("id,user_id,full_name,default_branch,connected_at,last_scanned_at").execute().data or []
+        for repo in repos:
+            owner = repo.get("user_id")
+            if owner in repos_by_user:
+                repos_by_user[owner].append(repo)
+    for user in users:
+        user["repositories"] = repos_by_user.get(user.get("id"), [])
+        user["repository_count"] = len(user["repositories"])
+    return {"users": users}
+
+
+@router.patch("/users/{user_id}/status")
+def update_user_status(user_id: str, body: UserStatusUpdate, admin: dict = Depends(require_admin)) -> dict:
+    if user_id == admin.get("id") and body.suspended:
+        raise HTTPException(status_code=400, detail="You cannot suspend your own admin account")
+    payload: dict[str, Any] = {
+        "is_suspended": body.suspended,
+        "suspended_at": _now_iso() if body.suspended else None,
+        "suspended_reason": body.reason.strip() if body.suspended and body.reason else None,
+    }
+    result = db().table("users").update(payload).eq("id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True, "user": result.data[0]}
+
+
+@router.patch("/users/{user_id}/plan")
+def update_user_plan(user_id: str, body: UserPlanUpdate) -> dict:
+    allowed = {"free", "pro", "agency", "enterprise"}
+    if body.plan.lower() not in allowed:
+        raise HTTPException(status_code=422, detail=f"plan must be one of: {', '.join(sorted(allowed))}")
+    result = db().table("users").update({"plan": body.plan.lower()}).eq("id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"ok": True, "user": result.data[0]}
+
+
+@router.delete("/repos/{repo_id}", status_code=204)
+def disconnect_repository(repo_id: str):
+    result = db().table("repos").delete().eq("id", repo_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Repository not found")

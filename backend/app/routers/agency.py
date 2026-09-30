@@ -102,7 +102,10 @@ def _generate_invite_token() -> str:
 # GET /agency/status
 # ---------------------------------------------------------------------------
 @router.get("/status", response_model=AgencyStatusOut)
-def agency_status(user_id: str = Depends(get_current_user_id)):
+def agency_status(
+    repository_id: str | None = Query(None),
+    user_id: str = Depends(get_current_user_id),
+):
     user_result = (
         db().table("users")
         .select("is_agency")
@@ -112,21 +115,25 @@ def agency_status(user_id: str = Depends(get_current_user_id)):
     )
     is_agency = user_result.data[0].get("is_agency", False) if user_result.data else False
 
-    count_result = (
+    count_query = (
         db().table("agency_clients")
         .select("id", count="exact")
         .eq("agency_owner_id", user_id)
-        .execute()
     )
+    if repository_id and repository_id.strip():
+        count_query = count_query.eq("repository_id", repository_id)
+    count_result = count_query.execute()
     client_count = count_result.count or 0
 
-    pending_result = (
+    pending_query = (
         db().table("agency_clients")
         .select("id", count="exact")
         .eq("agency_owner_id", user_id)
         .eq("status", "pending")
-        .execute()
     )
+    if repository_id and repository_id.strip():
+        pending_query = pending_query.eq("repository_id", repository_id)
+    pending_result = pending_query.execute()
     pending_count = pending_result.count or 0
 
     return AgencyStatusOut(
@@ -140,15 +147,19 @@ def agency_status(user_id: str = Depends(get_current_user_id)):
 # GET /agency/clients
 # ---------------------------------------------------------------------------
 @router.get("/clients", response_model=list[AgencyClientOut])
-def list_clients(user_id: str = Depends(get_current_user_id)):
+def list_clients(
+    repository_id: str | None = Query(None),
+    user_id: str = Depends(get_current_user_id),
+):
     _verify_agency_owner(user_id)
-    result = (
+    query = (
         db().table("agency_clients")
         .select("id, client_display_name, client_email, status, logo_url, created_at, authorized_at")
         .eq("agency_owner_id", user_id)
-        .order("created_at", desc=True)
-        .execute()
     )
+    if repository_id and repository_id.strip():
+        query = query.eq("repository_id", repository_id)
+    result = query.order("created_at", desc=True).execute()
     return result.data or []
 
 

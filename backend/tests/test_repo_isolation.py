@@ -227,6 +227,22 @@ def test_issues_scoped_and_zero():
     assert len(res) == 1
 
 
+def test_failures_and_anomalies_stay_in_selected_repository():
+    fake = _FakeDB(
+        repos_rows=[REPO_A, REPO_B],
+        issue_rows=[
+            _issue("repoA", "critical", "customer_code"),
+            _issue("repoB", "critical", "customer_code"),
+            _issue("repoB", "high", "provider_incident"),
+        ],
+    )
+    _patch(fake)
+    failures = health.list_failures(user_id="u1", repository_id="repoA", limit=100)
+    anomalies = health.list_anomalies(user_id="u1", repository_id="repoA", limit=100)
+    assert {i["repo_id"] for i in failures["failures"]} == {"repoA"}
+    assert {i["repo_id"] for i in anomalies["anomalies"]} == {"repoA"}
+
+
 # ---------------------------------------------------------------------------
 # 3. /impact/summary — scoped
 # ---------------------------------------------------------------------------

@@ -19,10 +19,11 @@ function FailuresPage() {
   const searchParams = useSearchParams();
   const repositoryId = searchParams.get("repository_id") ?? "";
   const [issues, setIssues] = useState<HealthIssue[]>([]);
-  const [summary, setSummary] = useState<{ total: number; customer_code: number; provider_incident: number }>({
+  const [summary, setSummary] = useState<{ total: number; customer_code: number; provider_incident: number; other: number }>({
     total: 0,
     customer_code: 0,
     provider_incident: 0,
+    other: 0,
   });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -31,7 +32,7 @@ function FailuresPage() {
     if (!repositoryId) {
       // Never silently show ALL repositories' data before a repo is selected.
       setIssues([]);
-      setSummary({ total: 0, customer_code: 0, provider_incident: 0 });
+      setSummary({ total: 0, customer_code: 0, provider_incident: 0, other: 0 });
       setLoading(false);
       return;
     }
@@ -40,11 +41,11 @@ function FailuresPage() {
     getHealthFailures(500, repositoryId)
       .then((res) => {
         setIssues(Array.isArray(res.failures) ? res.failures : []);
-        setSummary({ total: res.total, customer_code: res.customer_code, provider_incident: res.provider_incident });
+        setSummary({ total: res.total, customer_code: res.customer_code, provider_incident: res.provider_incident, other: res.other || 0 });
       })
       .catch(() => {
         setIssues([]);
-        setSummary({ total: 0, customer_code: 0, provider_incident: 0 });
+        setSummary({ total: 0, customer_code: 0, provider_incident: 0, other: 0 });
       })
       .finally(() => setLoading(false));
   }, [repositoryId]);
@@ -52,7 +53,7 @@ function FailuresPage() {
   useEffect(load, [load]);
 
   const failures = useMemo(
-    () => issues.filter((i) => i.category === "customer_code" || i.category === "provider_incident"),
+    () => issues.filter((i) => ["customer_code", "customer_usage", "configuration", "provider_incident"].includes(i.category)),
     [issues]
   );
 
@@ -78,7 +79,7 @@ function FailuresPage() {
         <RepositorySelector />
       </div>
       <p style={{ color: "var(--muted)", fontSize: 13, marginTop: -8 }}>
-        {summary.total} open failure{summary.total !== 1 ? "s" : ""} · {summary.customer_code} code-side · {summary.provider_incident} provider
+        {summary.total} open failure{summary.total !== 1 ? "s" : ""} · {summary.customer_code} code-side · {summary.provider_incident} provider · {summary.other} config/usage
       </p>
 
       {failures.length === 0 ? (

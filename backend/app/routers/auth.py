@@ -46,9 +46,11 @@ def github_callback(body: GitHubCallbackIn) -> AuthOut:
         gh_token = exchange_code_for_token(body.code, body.redirect_uri)
         gh_user = get_authenticated_user(gh_token)
     except GitHubError as exc:
+        # Do not echo the caller-supplied redirect URI or provider internals
+        # in an API response.  Redirect URIs may contain sensitive query data.
         raise HTTPException(
             status_code=502,
-            detail=f"{exc}; redirect_uri={body.redirect_uri!r}",
+            detail="GitHub sign-in could not be completed. Please try again.",
         )
 
     if not gh_user.get("email"):
@@ -68,6 +70,8 @@ def github_callback(body: GitHubCallbackIn) -> AuthOut:
     if not res.data:
         raise HTTPException(status_code=500, detail="Failed to persist user")
     user = res.data[0]
+    if user.get("is_suspended"):
+        raise HTTPException(status_code=403, detail="Account suspended")
 
     return AuthOut(
         token=issue_session_token(user["id"]),

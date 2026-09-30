@@ -1,9 +1,11 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useRef, useState } from "react";
 import { ReactNode } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { clearSession, ensureSession, getToken, getUser } from "../../lib/auth";
 import { getConsentStatus, listAllAlerts } from "../../lib/api";
 import { Badge, severityLabel, severityTone, timeAgo, ToastHost } from "../../components/dashboard-ui";
@@ -68,6 +70,7 @@ const NAV_STORAGE_KEY = "autofix:sidebar:collapsed";
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -238,6 +241,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   ];
 
   const isActive = (href: string) => pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+  const withRepositoryContext = (href: string) => {
+    const repositoryId = searchParams.get("repository_id");
+    if (!repositoryId || href.startsWith("/dashboard/providers")) return href;
+    const params = new URLSearchParams({ repository_id: repositoryId });
+    return `${href}?${params.toString()}`;
+  };
 
   const shellTheme = minimized ? "p-sidebar-collapsed" : "";
 
@@ -276,7 +285,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       return (
                         <li key={item.name}>
                           <Link
-                            href={item.href}
+                            href={withRepositoryContext(item.href)}
                             className={`sidebar-link p-sb-item ${active ? "active p-sb-item--active" : ""}`}
                             aria-current={active ? "page" : undefined}
                             title={minimized ? item.name : undefined}

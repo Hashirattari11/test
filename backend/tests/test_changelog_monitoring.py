@@ -182,6 +182,31 @@ class TestClassification(unittest.TestCase):
             self.assertEqual(result.evidence, [])
 
 
+class TestTruthfulMonitoringOutcomes(unittest.TestCase):
+    """The matrix must report the latest observed outcome, not a source default."""
+
+    def test_fetch_failures_are_classified_by_their_actual_cause(self):
+        from app.changelog.scheduler import _truthful_outcome
+
+        cases = {
+            "timed out inside cron budget": "TIMED_OUT",
+            "GET https://example.test/changelog failed: 404 Not Found": "SOURCE_NOT_FOUND",
+            "HTTP 403 Forbidden": "ACCESS_BLOCKED",
+            "HTTP 429 Too Many Requests": "RATE_LIMITED",
+            "parser selector returned no matching entries": "PARSER_ERROR",
+            "HTTP 503 Service Unavailable": "TEMPORARILY_UNAVAILABLE",
+        }
+        for error, expected in cases.items():
+            with self.subTest(error=error):
+                self.assertEqual(_truthful_outcome("stripe", [], error), expected)
+
+    def test_successful_outcomes_are_not_reported_as_failures(self):
+        from app.changelog.scheduler import _truthful_outcome
+
+        self.assertEqual(_truthful_outcome("stripe", [object()], None), "ACTIVE")
+        self.assertEqual(_truthful_outcome("stripe", [], None), "LIMITED")
+
+
 class TestSchedulerAdapter(unittest.TestCase):
     """S3.2.5: factory produces adapters for all providers."""
 

@@ -41,9 +41,17 @@ export default function RepositorySelector({
         setRepos(r || []);
         // Repo-scoped views: auto-select the first repo instead of silently
         // showing an aggregate of every repository.
-        if (!allowAll && r && r.length > 0 && !searchParams.get("repository_id")) {
+        const urlRepo = searchParams.get("repository_id");
+        const storedRepo = typeof window !== "undefined"
+          ? window.localStorage.getItem("autofix:selected-repository")
+          : null;
+        const preferredRepo = urlRepo || storedRepo;
+        if (!allowAll && r && r.length > 0 && !urlRepo) {
           const params = new URLSearchParams(searchParams.toString());
-          params.set("repository_id", r[0].id);
+          const selectedRepo = preferredRepo && r.some((repo) => repo.id === preferredRepo)
+            ? preferredRepo
+            : r[0].id;
+          params.set("repository_id", selectedRepo);
           router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
         }
       })
@@ -72,6 +80,9 @@ export default function RepositorySelector({
     if (repoId) params.set("repository_id", repoId);
     else params.delete("repository_id");
     router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+    if (repoId) {
+      try { window.localStorage.setItem("autofix:selected-repository", repoId); } catch { /* private mode */ }
+    }
     onChange?.(repoId);
   };
 

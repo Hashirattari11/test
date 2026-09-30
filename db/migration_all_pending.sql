@@ -45,3 +45,9 @@ ALTER TABLE alerts ADD COLUMN IF NOT EXISTS provider text DEFAULT 'resend';
 ALTER TABLE alerts ADD COLUMN IF NOT EXISTS status text DEFAULT 'sent';
 ALTER TABLE alerts ADD COLUMN IF NOT EXISTS is_test boolean DEFAULT false;
 CREATE INDEX IF NOT EXISTS idx_alerts_repo ON alerts(repo_id);
+
+-- 7. Admin account/repository management
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended boolean NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_reason text;
+CREATE INDEX IF NOT EXISTS idx_users_suspended ON users(is_suspended);

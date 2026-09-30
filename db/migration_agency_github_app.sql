@@ -13,3 +13,7 @@ alter table repos add column if not exists agency_client_id uuid references agen
 
 -- Index for fast lookups of agency-owned repos.
 create index if not exists idx_repos_agency_client on repos(agency_client_id) where agency_client_id is not null;
+
+-- Repo-scope agency clients so an agency sees only the selected repository's data.
+alter table agency_clients add column if not exists repository_id uuid;
+create index if not exists idx_agency_clients_repository on agency_clients(repository_id) where repository_id is not null;

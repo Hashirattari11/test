@@ -1,11 +1,11 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import RepositorySelector from "../../../../components/RepositorySelector";
 import {
   getScans,
-  listRepos,
-  Repo,
   ScanRecord,
   scanRepo,
   ScanResult,
@@ -21,24 +21,15 @@ const STAGES = [
   "Generating health report…",
 ];
 
-export default function ScannerPage() {
-  const [repos, setRepos] = useState<Repo[]>([]);
-  const [repoId, setRepoId] = useState("");
+function ScannerContent() {
+  const searchParams = useSearchParams();
+  const repoId = searchParams.get("repository_id") ?? "";
   const [scans, setScans] = useState<ScanRecord[]>([]);
   const [scanning, setScanning] = useState(false);
   const [stage, setStage] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResult | null>(null);
   const ticker = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    listRepos()
-      .then((rs) => {
-        setRepos(rs);
-        if (rs[0]) setRepoId(rs[0].id);
-      })
-      .catch(() => setRepos([]));
-  }, []);
 
   useEffect(() => {
     if (!repoId) return;
@@ -78,13 +69,7 @@ export default function ScannerPage() {
         <Link href="/docs/repository-scanner" style={{ textDecoration: "none" }}>Learn more</Link></p>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-        <select value={repoId} onChange={(e) => setRepoId(e.target.value)}>
-          {repos.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.full_name}
-            </option>
-          ))}
-        </select>
+        <RepositorySelector />
         <button className="btn btn-primary" onClick={runScan} disabled={scanning || !repoId}>
           {scanning ? `Scanning… ${STAGES[stage]}` : "Scan now"}
         </button>
@@ -165,4 +150,8 @@ export default function ScannerPage() {
       )}
     </div>
   );
+}
+
+export default function ScannerPage() {
+  return <Suspense fallback={<div className="loading">Loading repository scanner…</div>}><ScannerContent /></Suspense>;
 }

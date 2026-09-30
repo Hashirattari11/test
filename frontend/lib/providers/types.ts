@@ -28,7 +28,13 @@ export type ProviderHealthStatus =
   | "ACTIVE"
   | "LIMITED"
   | "SOURCE_UNAVAILABLE"
-  | "ERROR";
+  | "ERROR"
+  | "TIMED_OUT"
+  | "SOURCE_NOT_FOUND"
+  | "ACCESS_BLOCKED"
+  | "RATE_LIMITED"
+  | "PARSER_ERROR"
+  | "TEMPORARILY_UNAVAILABLE";
 
 export type ConfidenceLevel = "low" | "medium" | "high";
 

@@ -44,6 +44,11 @@ def get_current_user_id(
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=401, detail="Malformed session token")
+    user = fetch_one("users", {"id": user_id})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    if user.get("is_suspended"):
+        raise HTTPException(status_code=403, detail="Account suspended")
     return user_id
 
 

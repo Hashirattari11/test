@@ -10,10 +10,11 @@ are reported truthfully (timed_out) and picked up next tick.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
 import time as _time
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, wait as futures_wait
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -23,15 +24,19 @@ from . import classify
 from .base import FetchError, RawEntry
 from .fingerprint import entry_fingerprint
 from .sources import (ALL_PROVIDER_IDS, HTML_STRICT, NONE, PROVIDER_SOURCES_BY_ID,
-                      STATUS_ACTIVE, STATUS_ERROR, STATUS_LIMITED, STATUS_SOURCE_UNAVAILABLE)
-
-# Vercel cron function timeout is 30s; per-provider hard cap + total budget
-# keep the endpoint inside the budget (leftovers are timed_out and picked up
-# by the next tick — external_id dedup makes partial runs safe).
+                      STATUS_ACCESS_BLOCKED, STATUS_ACTIVE, STATUS_ERROR,
+                      STATUS_LIMITED, STATUS_PARSER_ERROR, STATUS_RATE_LIMITED,
+                      STATUS_SOURCE_NOT_FOUND, STATUS_SOURCE_UNAVAILABLE,
+                      STATUS_TEMPORARILY_UNAVAILABLE, STATUS_TIMED_OUT)
+# Budget is sized for the 60s Vercel cron function (vercel.json maxDuration):
+# 44 network-bound fetches need more parallelism than a 25s/4-worker budget
+# allowed — otherwise 15+ providers every run were marked TIMED_OUT and never
+# caught up (external_id dedup makes partial runs safe, but a run that only
+# ever reaches ~10 providers leaves the rest permanently stale).
 # Budgets are env-tunable so local sweeps can go deeper than the cron.
-FETCH_TIMEOUT_SECONDS = int(os.getenv("FETCH_TIMEOUT_SECONDS", "12"))
-FETCH_MAX_WORKERS = int(os.getenv("FETCH_MAX_WORKERS", "4"))
-TOTAL_BUDGET_SECONDS = int(os.getenv("TOTAL_BUDGET_SECONDS", "25"))
+FETCH_TIMEOUT_SECONDS = int(os.getenv("FETCH_TIMEOUT_SECONDS", "10"))
+FETCH_MAX_WORKERS = int(os.getenv("FETCH_MAX_WORKERS", "8"))
+TOTAL_BUDGET_SECONDS = int(os.getenv("TOTAL_BUDGET_SECONDS", "45"))
 
 # Impact analysis runs inside the daily-scan endpoint (60s Vercel budget).
 MAX_IMPACT_EVENTS_PER_RUN = int(__import__("os").getenv("MAX_IMPACT_EVENTS_PER_RUN", "20"))
@@ -198,10 +203,13 @@ def _update_status(provider_id: str, status: str, *, fetched: int, duration_ms: 
             "feed_url": source.feed_url if source and source.feed_url else "",
             "last_fetch_at": _now_iso(),
             "duration_ms": duration_ms,
-            "last_http_status": 200 if http_ok else None,
+            # A timeout or fetch exception did not produce a successful HTTP
+            # response.  Reporting 200 here made failures look healthy.
+            "last_http_status": 200 if http_ok and not error else None,
+            # Explicitly clear a previous failure after a clean fetch.  Omitting
+            # this field during an upsert left stale errors beside ACTIVE badges.
+            "last_error": error[:500] if error else None,
         }
-        if error:
-            row["last_error"] = error[:500]
         _db_retry(
             lambda: db().table("provider_monitoring_status").upsert(
                 row, on_conflict="provider_id"
@@ -214,6 +222,41 @@ def _update_status(provider_id: str, status: str, *, fetched: int, duration_ms: 
 # ---------------------------------------------------------------------------
 # Fetch orchestration (44 providers, isolated)
 # ---------------------------------------------------------------------------
+def _truthful_outcome(provider_id: str, entries: list, error: str | None) -> str:
+    """Classify the outcome the monitor ACTUALLY observed — never a guess.
+
+    Entries parsed+stored      -> STATUS_ACTIVE
+    No entries, no error       -> STATUS_LIMITED (official source reachable,
+                                  nothing new published)
+    No entries + error         -> classified from what really failed:
+                                  timeout         -> STATUS_TIMED_OUT
+                                  404/not found   -> STATUS_SOURCE_NOT_FOUND
+                                  403/401         -> STATUS_ACCESS_BLOCKED
+                                  429/rate limit  -> STATUS_RATE_LIMITED
+                                  parser failure  -> STATUS_PARSER_ERROR
+                                  5xx/network     -> STATUS_TEMPORARILY_UNAVAILABLE
+                                  anything else   -> STATUS_ERROR
+    """
+    if entries:
+        return STATUS_ACTIVE
+    if not error:
+        return STATUS_LIMITED
+    msg = error.lower()
+    if "timed out" in msg or "timed_out" in msg or "cron budget" in msg:
+        return STATUS_TIMED_OUT
+    if "404" in msg or "not found" in msg or "no such" in msg:
+        return STATUS_SOURCE_NOT_FOUND
+    if "403" in msg or "forbidden" in msg or "401" in msg or "unauthorized" in msg:
+        return STATUS_ACCESS_BLOCKED
+    if "429" in msg or "too many requests" in msg or "rate limit" in msg:
+        return STATUS_RATE_LIMITED
+    if "parse" in msg or "select" in msg or "classif" in msg:
+        return STATUS_PARSER_ERROR
+    if "500" in msg or "502" in msg or "503" in msg or "unavailable" in msg:
+        return STATUS_TEMPORARILY_UNAVAILABLE
+    return STATUS_ERROR
+
+
 def fetch_provider(provider_id: str, user_agent: str | None = None) -> list[RawEntry]:
     """Fetch official entries for one provider using its registered adapter."""
     from .parsers import FETCHERS
@@ -246,50 +289,58 @@ def fetch_all_providers(user_agent: str | None = None) -> dict:
             entries = _fetch_with_timeout(pid, user_agent)
             stats = store_entries(pid, entries, PROVIDER_SOURCES_BY_ID[pid].source_kind)
             stats["fetched"] = len(entries)
-            status = STATUS_LIMITED if len(entries) == 0 else STATUS_ACTIVE
+            status = _truthful_outcome(pid, entries, None)
             return pid, {**stats, "status": status}, None, int((_time.time() - start) * 1000)
         except Exception as e:  # noqa: BLE001
             error = str(e)[:500]
             return pid, {"fetched": 0, "stored": 0, "duplicates": 0,
-                         "skipped": 0, "errors": 1, "status": STATUS_ERROR,
+                         "skipped": 0, "errors": 1, "status": _truthful_outcome(pid, [], error),
                          "last_error": error}, error, int((_time.time() - start) * 1000)
 
     pool = ThreadPoolExecutor(max_workers=FETCH_MAX_WORKERS)
     try:
         futures: dict[Future, str] = {pool.submit(_work, pid): pid for pid in provider_ids}
         pending = set(futures)
-        while pending:
-            remaining = deadline - _time.time()
-            if remaining <= 0:
-                break
-            try:
-                for future in as_completed(pending, timeout=max(remaining, 0.1)):
-                    pid = futures[future]
-                    pending.discard(future)
-                    try:
-                        pid_r, stats, error, duration_ms = future.result()
-                    except Exception as e:  # noqa: BLE001
-                        stats, error = {"fetched": 0, "stored": 0, "duplicates": 0,
-                                        "skipped": 0, "errors": 1, "status": STATUS_ERROR}, str(e)
-                        duration_ms = int((_time.time() - _time.time()) * 0) or 1
-                    results.setdefault(pid, stats)
-                    _update_status(pid, stats.get("status", STATUS_ERROR),
-                                   fetched=stats.get("fetched", 0), duration_ms=duration_ms,
-                                   error=error)
-                    if _time.time() >= deadline:
-                        break
-            except _TimeoutError:
-                break
+        # concurrent.futures.wait returns completed futures EXACTLY once, so a
+        # result is never mislabeled TIMED_OUT after it actually finished (the
+        # previous as_completed loop could break with finished futures still
+        # sitting in `pending`).
+        while pending and _time.time() < deadline:
+            done, _not_done = futures_wait(
+                pending,
+                timeout=max(deadline - _time.time(), 0.1),
+                return_when=concurrent.futures.ALL_COMPLETED,
+            )
+            for future in done:
+                pid = futures[future]
+                pending.discard(future)
+                try:
+                    pid_r, stats, error, duration_ms = future.result()
+                except Exception as e:  # noqa: BLE001
+                    error = str(e)[:500]
+                    stats = {"fetched": 0, "stored": 0, "duplicates": 0,
+                             "skipped": 0, "errors": 1,
+                             "status": _truthful_outcome(pid, [], error),
+                             "last_error": error}
+                    duration_ms = 0
+                results.setdefault(pid, stats)
+                _update_status(pid, stats.get("status", STATUS_ERROR),
+                               fetched=stats.get("fetched", 0), duration_ms=duration_ms,
+                               error=error)
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
 
-    # Pending (budget expired) — truthful timed_out, never silently dropped.
-    # IMPORTANT: do NOT downgrade the persisted status to ERROR — budget expiry
-    # is not a provider failure; keep the last completed fetch status intact.
+    # Pending work did not complete within this run's budget. Persist that
+    # outcome so the matrix cannot show a stale ACTIVE/LIMITED badge.
     for future in pending:
         pid = futures[future]
-        results.setdefault(pid, {"fetched": 0, "stored": 0, "duplicates": 0, "skipped": 0,
-                                 "errors": 0, "timed_out": True, "status": STATUS_ERROR})
+        timeout_error = "timed out inside cron budget"
+        stats = {"fetched": 0, "stored": 0, "duplicates": 0, "skipped": 0,
+                 "errors": 1, "timed_out": True, "status": STATUS_TIMED_OUT,
+                 "last_error": timeout_error}
+        results.setdefault(pid, stats)
+        _update_status(pid, STATUS_TIMED_OUT, fetched=0, duration_ms=TOTAL_BUDGET_SECONDS * 1000,
+                       error=timeout_error, http_ok=False)
 
     # Providers with no source at all: mark SOURCE_UNAVAILABLE.
     for pid in provider_ids:
@@ -297,8 +348,7 @@ def fetch_all_providers(user_agent: str | None = None) -> dict:
         if src and src.source_kind == NONE:
             results.setdefault(pid, {"fetched": 0, "stored": 0, "duplicates": 0, "skipped": 0,
                                      "errors": 0, "status": STATUS_SOURCE_UNAVAILABLE})
-            _update_status(pid, STATUS_SOURCE_UNAVAILABLE, fetched=0, duration_ms=0,
-                           error="no reliable official machine-readable source")
+            _update_status(pid, STATUS_SOURCE_UNAVAILABLE, fetched=0, duration_ms=0)
 
     return results
 

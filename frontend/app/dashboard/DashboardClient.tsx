@@ -10,7 +10,9 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import RepositorySelector from "../../components/RepositorySelector";
 import {
   AlertWithRepo,
   DashboardStats,
@@ -59,6 +61,11 @@ function dotTone(tone: string): string {
 }
 
 export default function DashboardClient() {
+  const searchParams = useSearchParams();
+  // The selected repository (?repository_id=) scopes every data panel. When no
+  // repo is selected yet, panels stay empty instead of silently aggregating
+  // ALL repositories' data (same contract as the repo-scoped sub-pages).
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [connections, setConnections] = useState<ProviderConnection[] | null>(null);
   const [alerts, setAlerts] = useState<AlertWithRepo[] | null>(null);
   const [errors, setErrors] = useState<HealthRuntimeList<"errors"> | null>(null);
@@ -69,16 +76,27 @@ export default function DashboardClient() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    // Connection/provider overview (registry-wide) stays unscoped; repo data
+    // (alerts, errors, incidents) is scoped to the selected repository only.
+    if (!repositoryId) {
+      setConnections(null);
+      setAlerts([]);
+      setErrors(null);
+      setStats(null);
+      setIncidents([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setLoadError(null);
     try {
       const [conns, al, er, st, rp, inc] = await Promise.all([
         getProviderConnections().catch(() => ({ connections: [] as ProviderConnection[] })),
-        listAllAlerts().catch(() => [] as AlertWithRepo[]),
-        getHealthErrors(200).catch(() => null),
+        listAllAlerts(repositoryId).catch(() => [] as AlertWithRepo[]),
+        getHealthErrors(200, repositoryId).catch(() => null),
         getDashboardStats().catch(() => null),
         listRepos().catch(() => [] as Repo[]),
-        getProviderIncidentsFeed()
+        getProviderIncidentsFeed(repositoryId)
           .then((r) => r.incidents || [])
           .catch(() => [] as ProviderIncident[]),
       ]);
@@ -93,22 +111,25 @@ export default function DashboardClient() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [repositoryId]);
 
   useEffect(() => {
     refresh();
-    // One refresh on mount; manual refresh via header button is available.
+    // Re-fetch whenever the selected repository changes in the URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [repositoryId]);
 
-  const connected = connections ?? [];
+  const connected = useMemo(() => connections ?? [], [connections]);
   const openAlerts = useMemo(
     () =>
       (alerts ?? []).filter((a) => !a.is_test && a.status !== "resolved" && a.status !== "ignored"),
     [alerts]
   );
 
-  const errorIssues: HealthIssue[] = (errors?.errors as HealthIssue[] | undefined) ?? [];
+  const errorIssues: HealthIssue[] = useMemo(
+    () => (errors?.errors as HealthIssue[] | undefined) ?? [],
+    [errors]
+  );
 
   // Open incidents: real, from the runtime provider-incidents feed.
   const openIncidents = useMemo(
@@ -248,10 +269,13 @@ export default function DashboardClient() {
             {lastUpdated ? ` · updated ${timeAgo(lastUpdated)}` : ""}
           </p>
         </div>
-        <Link href="/dashboard/health" className="mc-status" style={{ textDecoration: "none" }}>
-          <span className={`mc-dot ${healthTone(healthStatus)}`} />
-          {healthStatus}
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <RepositorySelector value={repositoryId} onChange={() => { /* URL write is enough; refresh follows the param */ }} />
+          <Link href="/dashboard/health" className="mc-status" style={{ textDecoration: "none" }}>
+            <span className={`mc-dot ${healthTone(healthStatus)}`} />
+            {healthStatus}
+          </Link>
+        </div>
       </div>
 
       {/* ── Metric cards (real) ────────────────────────────────── */}

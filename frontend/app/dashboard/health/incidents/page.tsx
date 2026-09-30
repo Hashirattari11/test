@@ -1,17 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import RepositorySelector from "../../../../components/RepositorySelector";
 import { getProviderIncidentsFeed, ProviderIncident } from "../../../../lib/api";
 import { formatDate } from "../../../../components/ui";
 
-export default function IncidentsPage() {
+function IncidentsContent() {
+  const searchParams = useSearchParams();
+  const repositoryId = searchParams.get("repository_id") ?? "";
   const [incidents, setIncidents] = useState<ProviderIncident[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await getProviderIncidentsFeed();
+        if (!repositoryId) {
+          setIncidents([]);
+          return;
+        }
+        const res = await getProviderIncidentsFeed(repositoryId);
         setIncidents(res.incidents || []);
       } catch {
         setIncidents([]);
@@ -19,7 +27,7 @@ export default function IncidentsPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [repositoryId]);
 
   if (loading) return <div className="loading">Loading provider incidents…</div>;
 
@@ -27,8 +35,9 @@ export default function IncidentsPage() {
     <div>
       <h1>Runtime Intelligence · Provider Incidents</h1>
       <p className="subtitle">
-        Real incidents detected for your providers. Incidents are refreshed during scans.
+        Real incidents detected for providers used by the selected repository.
       </p>
+      <div style={{ margin: "12px 0" }}><RepositorySelector /></div>
 
       {incidents.length === 0 ? (
         <div className="empty-state">
@@ -89,4 +98,8 @@ export default function IncidentsPage() {
       )}
     </div>
   );
+}
+
+export default function IncidentsPage() {
+  return <Suspense fallback={<div className="loading">Loading provider incidents…</div>}><IncidentsContent /></Suspense>;
 }

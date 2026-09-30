@@ -13,7 +13,7 @@ from ..crypto import get_cipher
 from ..db import db, fetch_one
 from ..deps import get_current_user_id
 from ..health.collectors import rate_limit_status
-from ..health.issues import ReliabilityIssue
+from ..health.issues import IssueStatus, ReliabilityIssue
 from ..health.key_validation import SUPPORTED as KEY_VALIDATED_PROVIDERS
 from ..health.risk import RiskEngine
 from ..health.usage_graph import build_usage_graph
@@ -371,10 +371,13 @@ def list_failures(
     ownership is enforced on the backend (404 for unowned repos — IDOR-safe).
     """
     rows, repo_map = _all_open_issues(user_id, repository_id)
+    failure_categories = {
+        "customer_code", "customer_usage", "configuration", "provider_incident",
+    }
     failures = [
         _with_repo(r, repo_map)
         for r in rows
-        if r.get("category") in ("customer_code", "provider_incident")
+        if r.get("category") in failure_categories
     ]
     customer_code = sum(1 for f in failures if f.get("category") == "customer_code")
     provider_incident = sum(1 for f in failures if f.get("category") == "provider_incident")
@@ -382,6 +385,7 @@ def list_failures(
         "total": len(failures),
         "customer_code": customer_code,
         "provider_incident": provider_incident,
+        "other": len(failures) - customer_code - provider_incident,
         "failures": failures[:limit],
     }
 
@@ -394,16 +398,24 @@ def list_failures(
 @router.get("/incidents")
 def list_provider_incidents(
     limit: int = Query(100, ge=1, le=200),
+    repository_id: str | None = Query(None),
     user_id: str = Depends(get_current_user_id),
 ) -> dict:
-    """Recent real provider incidents (provider status pages / Stripe feed)."""
-    rows = (
-        db().table("provider_incidents")
-        .select("*")
-        .order("started_at", desc=True)
-        .limit(limit)
-        .execute()
-    ).data or []
+    """Recent incidents, scoped to the selected repository when provided."""
+    query = db().table("provider_incidents").select("*")
+    if repository_id:
+        _owned_repo(user_id, repository_id)
+        detected = (
+            db().table("api_detections")
+            .select("api_name")
+            .eq("repo_id", repository_id)
+            .execute()
+        ).data or []
+        providers = sorted({r.get("api_name") for r in detected if r.get("api_name")})
+        if not providers:
+            return {"total": 0, "incidents": []}
+        query = query.in_("provider", providers)
+    rows = query.order("started_at", desc=True).limit(limit).execute().data or []
     incidents = [
         {
             "id": r.get("id"),
@@ -487,6 +499,9 @@ def update_issue(
 
     updates = {}
     if "status" in body:
+        allowed_statuses = {s.value for s in IssueStatus}
+        if body["status"] not in allowed_statuses:
+            raise HTTPException(status_code=422, detail="Invalid issue status")
         updates["status"] = body["status"]
     if body.get("status") == "resolved":
         updates["resolved_at"] = datetime.now(timezone.utc).isoformat()
@@ -745,4 +760,3 @@ def delete_provider_connection(
         "provider", provider
     ).execute()
     return {"provider": provider, "connected": False}
-

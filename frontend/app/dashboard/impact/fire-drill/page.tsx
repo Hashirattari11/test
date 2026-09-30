@@ -1,10 +1,9 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  listRepos,
-  Repo,
   getImpactAnalyses,
   ImpactAnalysis,
   runFireDrill,
@@ -14,6 +13,7 @@ import {
 } from "../../../../lib/api";
 import { Badge, severityTone, timeAgo } from "../../../../components/dashboard-ui";
 import { Spinner } from "../../../../components/ui";
+import RepositorySelector from "../../../../components/RepositorySelector";
 
 const SEVERITY_COLORS: Record<string, string> = {
   safe: "#22c55e",
@@ -43,25 +43,18 @@ const MATRIX_TONE: Record<string, string> = {
   inactive: "#6b7280",
 };
 
-export default function FireDrillPage() {
-  const [repos, setRepos] = useState<Repo[]>([]);
-  const [selectedRepo, setSelectedRepo] = useState("");
+function FireDrillContent() {
+  const searchParams = useSearchParams();
+  const selectedRepo = searchParams.get("repository_id") ?? "";
   const [provider, setProvider] = useState("");
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ImpactAnalysis | null>(null);
   const [error, setError] = useState("");
   const [recentAnalyses, setRecentAnalyses] = useState<ImpactAnalysis[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading] = useState(false);
   const [matrix, setMatrix] = useState<FireDrillMatrix | null>(null);
   const [matrixBusy, setMatrixBusy] = useState(false);
   const [matrixError, setMatrixError] = useState("");
-
-  useEffect(() => {
-    listRepos()
-      .then((r) => setRepos(r || []))
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
-  }, []);
 
   const runDrill = async () => {
     if (!selectedRepo || !provider.trim() || running) return;
@@ -127,17 +120,7 @@ export default function FireDrillPage() {
       <section className="card" style={{ padding: 20, marginTop: 16 }}>
         <h2 style={{ marginTop: 0 }}>Run Fire Drill</h2>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <select
-            className="input"
-            value={selectedRepo}
-            onChange={(e) => setSelectedRepo(e.target.value)}
-            style={{ minWidth: 220 }}
-          >
-            <option value="">Select repository…</option>
-            {repos.map((r) => (
-              <option key={r.id} value={r.id}>{r.full_name}</option>
-            ))}
-          </select>
+          <RepositorySelector />
           <input
             className="input"
             placeholder="Provider (e.g. stripe)"
@@ -260,7 +243,7 @@ export default function FireDrillPage() {
           <div style={{ padding: "16px 20px 0" }}>
             <h2 style={{ marginBottom: 4 }}>Provider Matrix</h2>
             <p className="muted small" style={{ marginTop: 0 }}>
-              All {matrix.total} monitored providers classified from this repo's real usage and
+              All {matrix.total} monitored providers classified from this repo&apos;s real usage and
               changelog events. Active = usage + recent change; At risk = usage, no recent change;
               Unknown = events exist, no usage here; Inactive = neither.
             </p>
@@ -357,4 +340,8 @@ export default function FireDrillPage() {
       )}
     </div>
   );
+}
+
+export default function FireDrillPage() {
+  return <Suspense fallback={<div className="loading">Loading fire drill…</div>}><FireDrillContent /></Suspense>;
 }

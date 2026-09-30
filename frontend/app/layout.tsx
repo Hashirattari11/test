@@ -4,6 +4,11 @@ import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 import "./premium.css";
 
+// Dashboard pages use authenticated URL state (repository_id and filters). Render
+// those routes dynamically so Next never attempts to prerender a request-bound
+// client tree that reads useSearchParams().
+export const dynamic = "force-dynamic";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",

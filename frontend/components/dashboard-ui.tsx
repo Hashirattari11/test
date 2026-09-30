@@ -5,7 +5,7 @@
 // Consumed by dashboard, settings, admin, and health pages.
 // ---------------------------------------------------------------------------
 
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 
 /* ─────────────────────────────── Page header ─────────────────────────────── */
@@ -43,7 +43,9 @@ export function Sparkline({
   tone?: SparkTone;
   height?: number;
 }) {
-  const id = useRef(`sp${Math.round(Math.random() * 1e9)}`).current;
+  // useId is stable across server and client renders; Math.random() here
+  // caused hydration mismatches in production dashboards.
+  const id = `sp${useId().replace(/:/g, "")}`;
   if (!data || data.length < 2) {
     return <div className={`p-sparkline p-sparkline--${tone}`} style={{ height }} aria-hidden="true" />;
   }

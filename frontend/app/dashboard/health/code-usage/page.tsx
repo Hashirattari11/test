@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getDetections, listRepos, Repo } from "../../../../lib/api";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import RepositorySelector from "../../../../components/RepositorySelector";
+import { getDetections } from "../../../../lib/api";
 
 const STATUS_COLOR: Record<string, string> = {
   monitored: "#10b981",
@@ -10,26 +12,16 @@ const STATUS_COLOR: Record<string, string> = {
   unsupported: "#6b7280",
 };
 
-export default function CodeUsagePage() {
-  const [repos, setRepos] = useState<Repo[]>([]);
-  const [repoId, setRepoId] = useState("");
+function CodeUsageContent() {
+  const searchParams = useSearchParams();
+  const repoId = searchParams.get("repository_id") ?? "";
   const [groups, setGroups] = useState<
     { api_name: string; status: string; detection_count: number; file_count: number; detections: unknown[] }[]
   >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listRepos()
-      .then((rs) => {
-        setRepos(rs);
-        if (rs[0]) setRepoId(rs[0].id);
-      })
-      .catch(() => setRepos([]))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!repoId) return;
+    if (!repoId) { setGroups([]); setLoading(false); return; }
     setLoading(true);
     getDetections(repoId)
       .then((d) => setGroups(d.footprint || []))
@@ -44,13 +36,7 @@ export default function CodeUsagePage() {
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ marginRight: 8, opacity: 0.7 }}>Repository</label>
-        <select value={repoId} onChange={(e) => setRepoId(e.target.value)}>
-          {repos.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.full_name}
-            </option>
-          ))}
-        </select>
+        <RepositorySelector />
       </div>
 
       {loading ? (
@@ -100,4 +86,8 @@ export default function CodeUsagePage() {
       )}
     </div>
   );
+}
+
+export default function CodeUsagePage() {
+  return <Suspense fallback={<div className="loading">Loading code usage…</div>}><CodeUsageContent /></Suspense>;
 }

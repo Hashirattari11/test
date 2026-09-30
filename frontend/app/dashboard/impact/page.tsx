@@ -175,7 +175,7 @@ function ImpactPage() {
         <h2 style={{ marginBottom: 4 }}>API Fire Drill</h2>
         <p className="muted small" style={{ marginTop: 0 }}>
           Before deployment, analyze the selected repository against known third-party API changes.
-          Answer: "Is this deployment likely to break because of an external API?"
+          Answer: &quot;Is this deployment likely to break because of an external API?&quot;
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
           <input

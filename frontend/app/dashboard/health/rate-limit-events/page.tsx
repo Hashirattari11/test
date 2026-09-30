@@ -1,27 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getHealthRateLimit, listRepos, Repo } from "../../../../lib/api";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import RepositorySelector from "../../../../components/RepositorySelector";
+import { getHealthRateLimit } from "../../../../lib/api";
 import { formatDate } from "../../../../components/ui";
 
-export default function RateLimitEventsPage() {
-  const [repos, setRepos] = useState<Repo[]>([]);
-  const [repoId, setRepoId] = useState("");
+function RateLimitEventsContent() {
+  const searchParams = useSearchParams();
+  const repoId = searchParams.get("repository_id") ?? "";
   const [events, setEvents] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listRepos()
-      .then((rs) => {
-        setRepos(rs);
-        if (rs[0]) setRepoId(rs[0].id);
-      })
-      .catch(() => setRepos([]))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!repoId) return;
+    if (!repoId) { setEvents([]); setLoading(false); return; }
     setLoading(true);
     getHealthRateLimit(repoId)
       .then((d) => setEvents(d.snapshots || []))
@@ -36,13 +28,7 @@ export default function RateLimitEventsPage() {
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ marginRight: 8, opacity: 0.7 }}>Repository</label>
-        <select value={repoId} onChange={(e) => setRepoId(e.target.value)}>
-          {repos.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.full_name}
-            </option>
-          ))}
-        </select>
+        <RepositorySelector />
       </div>
 
       {loading ? (
@@ -103,4 +89,8 @@ export default function RateLimitEventsPage() {
       )}
     </div>
   );
+}
+
+export default function RateLimitEventsPage() {
+  return <Suspense fallback={<div className="loading">Loading rate limit events…</div>}><RateLimitEventsContent /></Suspense>;
 }

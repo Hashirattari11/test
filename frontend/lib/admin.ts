@@ -60,6 +60,20 @@ export type AdminUser = {
   is_admin?: boolean;
   is_agency?: boolean;
   created_at?: string | null;
+  is_suspended?: boolean;
+  suspended_at?: string | null;
+  suspended_reason?: string | null;
+  repository_count?: number;
+  repositories?: AdminRepository[];
+};
+
+export type AdminRepository = {
+  id: string;
+  user_id?: string | null;
+  full_name: string;
+  default_branch?: string | null;
+  connected_at?: string | null;
+  last_scanned_at?: string | null;
 };
 
 export type AdminUsersResponse = {
@@ -78,4 +92,25 @@ export const rejectAlert = (id: string) =>
 
 export const getAdminHealth = () => request<AdminHealthResponse>("/admin/health");
 
-export const getAdminUsers = () => request<AdminUsersResponse>("/admin/users");
+export const getAdminUsers = (search?: string, status?: "active" | "suspended") => {
+  const params = new URLSearchParams();
+  if (search?.trim()) params.set("search", search.trim());
+  if (status) params.set("status", status);
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return request<AdminUsersResponse>(`/admin/users${suffix}`);
+};
+
+export const updateAdminUserStatus = (id: string, suspended: boolean, reason?: string) =>
+  request<{ ok: boolean; user: AdminUser }>(`/admin/users/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ suspended, reason: reason?.trim() || null }),
+  });
+
+export const updateAdminUserPlan = (id: string, plan: string) =>
+  request<{ ok: boolean; user: AdminUser }>(`/admin/users/${id}/plan`, {
+    method: "PATCH",
+    body: JSON.stringify({ plan }),
+  });
+
+export const disconnectAdminRepository = (id: string) =>
+  request<void>(`/admin/repos/${id}`, { method: "DELETE" });

@@ -19,7 +19,7 @@ from ..deps import get_current_user_id, require_internal_secret
 from .scheduler import fetch_all_providers, log_health, run_daily_scans, run_impact_analysis_for_recent_events
 from .admin import get_pending_alerts, approve_alert, disable_alert, is_admin
 from .classify import CHANGE_TYPES, SEVERITIES, CONFIDENCES
-from .sources import ALL_PROVIDER_IDS, PROVIDER_SOURCES_BY_ID
+from .sources import ALL_PROVIDER_IDS, PROVIDER_SOURCES_BY_ID, STATUS_SOURCE_UNAVAILABLE
 
 router = APIRouter()
 
@@ -275,7 +275,9 @@ async def monitoring_matrix(
             rows.append({
                 "provider_id": pid,
                 "display_name": src.display_name if src else pid,
-                "status": "SOURCE_UNAVAILABLE" if src and src.source_kind == "NONE" else "LIMITED",
+                # This row has never been fetched, so show only the source's
+                # configured capability.  Never overwrite persisted outcomes.
+                "status": src.default_status if src else STATUS_SOURCE_UNAVAILABLE,
                 "source_kind": src.source_kind if src else "UNKNOWN",
                 "source_url": src.changelog_url if src else "",
             })

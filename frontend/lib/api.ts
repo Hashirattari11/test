@@ -605,8 +605,10 @@ export const getHealthRepo = (repoId: string) =>
     `/health/repo/${repoId}`
   );
 
-export const getProviderIncidentsFeed = () =>
-  request<{ total: number; incidents: ProviderIncident[] }>("/health/incidents");
+export const getProviderIncidentsFeed = (repositoryId?: string) =>
+  request<{ total: number; incidents: ProviderIncident[] }>(
+    `/health/incidents${repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : ""}`
+  );
 
 export const getHealthIssues = (params?: {
   severity?: string;
@@ -641,7 +643,7 @@ export const getHealthErrors = (limit = 200, repositoryId?: string) =>
   );
 
 export const getHealthFailures = (limit = 200, repositoryId?: string) =>
-  request<{ total: number; customer_code: number; provider_incident: number; failures: HealthIssue[] }>(
+  request<{ total: number; customer_code: number; provider_incident: number; other?: number; failures: HealthIssue[] }>(
     `/health/failures?limit=${limit}${repositoryId ? `&repository_id=${encodeURIComponent(repositoryId)}` : ""}`
   );
 

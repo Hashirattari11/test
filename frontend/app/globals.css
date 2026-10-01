@@ -98,6 +98,26 @@ code {
 .nav-links .muted {
   color: var(--muted);
 }
+/* Mobile: the shared Nav is used on several full pages (billing, onboarding,
+   repo detail, settings). Let it wrap instead of overflowing, and stop the
+   user email from forcing the bar wide. */
+@media (max-width: 640px) {
+  .nav-inner {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .nav-links {
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    width: 100%;
+  }
+  .nav-links .muted {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 
 /* ---- Layout helpers ---- */
 .page {

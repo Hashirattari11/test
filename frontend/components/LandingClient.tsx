@@ -247,7 +247,14 @@ export default function LandingPage() {
         @media (max-width: 768px) {
           .lp-hero { padding: 100px 16px 60px; }
           .lp-hero .container { grid-template-columns: 1fr !important; text-align: center; gap: 48px; }
+          /* Grid items must be allowed to shrink below their content's
+             min-content width — otherwise the code window (white-space: pre)
+             forces a 446px column and clips the hero text on phones. */
+          .lp-hero .container > * { min-width: 0 !important; max-width: 100%; }
+          .lp-hero .lp-code-content { font-size: 11px; padding: 16px; }
+          .lp-hero h1 { overflow-wrap: break-word; }
           .lp-hero-cta { align-items: center; }
+          .lp-hero-cta .btn { white-space: normal; }
           .lp-hero-grid { grid-template-columns: 1fr !important; }
           .lp-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .lp-steps-grid { grid-template-columns: 1fr !important; }

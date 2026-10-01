@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { clearSession, getUser } from "../lib/auth";
 import { LogoMark } from "./Logo";
 
@@ -85,7 +86,13 @@ export function formatDate(value?: string | null): string {
 
 export function Nav() {
   const router = useRouter();
-  const user = getUser();
+  // Hydration-safe: read localStorage session only after mount. Reading it
+  // during render makes SSR markup (no email) differ from the client tree
+  // (email span) for any signed-in visitor — React errors #418/#423.
+  const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
+  useEffect(() => {
+    setUser(getUser());
+  }, []);
 
   function logout() {
     clearSession();

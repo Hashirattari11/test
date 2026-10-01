@@ -40,8 +40,11 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // suppressHydrationWarning: the no-flash theme script mutates the
+  // data-theme attribute before React hydrates — without it, every page
+  // logs React hydration errors (#418/#423/#425) in production.
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className={inter.className}>
         {/* No-flash theme: applies stored/system preference before first paint.
             Runtime changes are handled by lib/theme.ts (dashboard + settings). */}

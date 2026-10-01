@@ -1405,6 +1405,14 @@ a.p-list-item {
   .p-page-actions { width: 100%; }
   .p-stats-grid { grid-template-columns: 1fr; }
   .p-dropdown { width: calc(100vw - 32px); }
+  /* Settings tab strip: wrap onto 2 rows on phones instead of a hidden
+     horizontal scroll area (buttons + SVG icons were overflowing 375px). */
+  .p-settings-nav {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 6px;
+  }
+  .p-settings-nav-item { white-space: normal; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1621,36 +1629,49 @@ canvas {
   }
 }
 
-/* 3) Phones: tables with .responsive-cards become stacked cards. */
+/* 3) Phones: tables with .responsive-cards become stacked cards.
+   NOTE: selector list intentionally covers BOTH table conventions used in
+   the app â€” legacy `.table.responsive-cards` and the dashboard's
+   `.mc-table.responsive-cards` â€” so every data table collapses to cards. */
 @media (max-width: 660px) {
   .table.responsive-cards,
   .table.responsive-cards thead,
   .table.responsive-cards tbody,
   .table.responsive-cards tr,
-  .table.responsive-cards td {
+  .table.responsive-cards td,
+  .mc-table.responsive-cards,
+  .mc-table.responsive-cards thead,
+  .mc-table.responsive-cards tbody,
+  .mc-table.responsive-cards tr,
+  .mc-table.responsive-cards td {
     display: block;
   }
-  .table.responsive-cards {
+  .table.responsive-cards,
+  .mc-table.responsive-cards {
     overflow: visible;
     white-space: normal;
     width: 100% !important;
     min-width: 0 !important;
   }
-  .table.responsive-cards thead { display: none; }
-  .table.responsive-cards tbody {
+  .table.responsive-cards thead,
+  .mc-table.responsive-cards thead { display: none; }
+  .table.responsive-cards tbody,
+  .mc-table.responsive-cards tbody {
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 12px;
   }
-  .table.responsive-cards tr {
+  .table.responsive-cards tr,
+  .mc-table.responsive-cards tr {
     background: var(--surface, #fff);
     border: 1px solid var(--border, #e5e7eb);
     border-radius: 12px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
     padding: 4px 14px;
   }
-  .table.responsive-cards td {
+  .table.responsive-cards td,
+  .mc-table.responsive-cards td {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -1660,7 +1681,8 @@ canvas {
     white-space: normal;
     word-break: break-word;
   }
-  .table.responsive-cards td::before {
+  .table.responsive-cards td::before,
+  .mc-table.responsive-cards td::before {
     content: attr(data-label);
     flex-shrink: 0;
     min-width: 84px;
@@ -1670,20 +1692,26 @@ canvas {
     text-transform: uppercase;
     color: var(--muted, #64748b);
   }
-  .table.responsive-cards td:last-child {
+  .table.responsive-cards td:last-child,
+  .mc-table.responsive-cards td:last-child {
     border-bottom: none;
     flex-direction: column;
     align-items: stretch;
   }
-  .table.responsive-cards td:last-child::before { margin-top: 4px; }
-  .table.responsive-cards td:last-child > div { width: 100%; justify-content: flex-end; }
-  .table.responsive-cards td:last-child .btn { flex: 1 1 auto; text-align: center; }
-  .table.responsive-cards td > code { text-align: right; white-space: normal; word-break: break-word; }
-  .table.responsive-cards .cell-label { text-align: right; }
+  .table.responsive-cards td:last-child::before,
+  .mc-table.responsive-cards td:last-child::before { margin-top: 4px; }
+  .table.responsive-cards td:last-child > div,
+  .mc-table.responsive-cards td:last-child > div { width: 100%; justify-content: flex-end; }
+  .table.responsive-cards td:last-child .btn,
+  .mc-table.responsive-cards td:last-child .btn { flex: 1 1 auto; text-align: center; }
+  .table.responsive-cards td > code,
+  .mc-table.responsive-cards td > code { text-align: right; white-space: normal; word-break: break-word; }
+  .table.responsive-cards .cell-label,
+  .mc-table.responsive-cards .cell-label { text-align: right; }
 }
 
 /* =========================================================
-   M13 — POLISH & MOTION (professional interactions)
+   M13 ï¿½ POLISH & MOTION (professional interactions)
    ========================================================= */
 
 /* 1) Theme toggle button + sun/moon morph. */
@@ -1797,7 +1825,7 @@ button:active { transform: scale(0.98); }
 }
 
 /* ============================================================
-   M16 — SIGN-IN FLOW (login page, OAuth starter, callback)
+   M16 ï¿½ SIGN-IN FLOW (login page, OAuth starter, callback)
    ============================================================ */
 .lp-login-wrap {
   min-height: 100vh;

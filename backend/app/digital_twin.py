@@ -45,6 +45,8 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from postgrest.exceptions import APIError
+
 from .db import db
 from .impact.analyzer import analyze_changelog_event
 from .impact.severity import calculate_impact_severity
@@ -559,14 +561,21 @@ def run_digital_twin(
 # ---------------------------------------------------------------------------
 def get_repo_twin_summary(repo_id: str) -> dict:
     """Aggregates for the flagship card — every query filtered by repo_id."""
-    rows = (
-        db().table("digital_twin_analyses")
-        .select("impact_status, severity, confidence, provider_id, change_event_id, created_at")
-        .eq("repository_id", repo_id)
-        .order("created_at", desc=True)
-        .limit(500)
-        .execute()
-    ).data or []
+    try:
+        rows = (
+            db().table("digital_twin_analyses")
+            .select("impact_status, severity, confidence, provider_id, change_event_id, created_at")
+            .eq("repository_id", repo_id)
+            .order("created_at", desc=True)
+            .limit(500)
+            .execute()
+        ).data or []
+    except APIError as exc:
+        # The digital-twin tables may not be migrated yet on an environment —
+        # degrade to an honest empty summary instead of a 500 (apply the
+        # migration via POST /internal/migrate-digital-twin).
+        logger.warning("digital_twin summary degraded for %s: %s", repo_id, exc)
+        rows = []
     by_status: dict[str, int] = {}
     providers: set[str] = set()
     events: set[str] = set()
@@ -585,14 +594,18 @@ def get_repo_twin_summary(repo_id: str) -> dict:
             potential += 1
         elif st == STATUS_SAFE:
             safe += 1
-    runs = (
-        db().table("digital_twin_runs")
-        .select("created_at, events_considered, analyses_created, no_match_count, status")
-        .eq("repository_id", repo_id)
-        .order("created_at", desc=True)
-        .limit(1)
-        .execute()
-    ).data or []
+    try:
+        runs = (
+            db().table("digital_twin_runs")
+            .select("created_at, events_considered, analyses_created, no_match_count, status")
+            .eq("repository_id", repo_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        ).data or []
+    except APIError as exc:
+        logger.warning("digital_twin runs unavailable for %s: %s", repo_id, exc)
+        runs = []
     last_run = runs[0] if runs else None
     return {
         "repository_id": repo_id,
@@ -628,17 +641,25 @@ def get_repo_twin_analyses(
         query = query.eq("provider_id", provider)
     if status:
         query = query.eq("impact_status", status)
-    return (query.execute()).data or []
+    try:
+        return (query.execute()).data or []
+    except APIError as exc:
+        logger.warning("digital_twin analyses degraded for %s: %s", repo_id, exc)
+        return []
 
 
 def get_twin_analysis(analysis_id: str, repository_id: str) -> dict | None:
     """One analysis — must belong to repository_id (isolation guard)."""
-    rows = (
-        db().table("digital_twin_analyses")
-        .select("*")
-        .eq("id", analysis_id)
-        .eq("repository_id", repository_id)
-        .limit(1)
-        .execute()
-    ).data or []
+    try:
+        rows = (
+            db().table("digital_twin_analyses")
+            .select("*")
+            .eq("id", analysis_id)
+            .eq("repository_id", repository_id)
+            .limit(1)
+            .execute()
+        ).data or []
+    except APIError as exc:
+        logger.warning("digital_twin analysis %s unavailable: %s", analysis_id, exc)
+        return None
     return rows[0] if rows else None

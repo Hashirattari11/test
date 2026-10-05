@@ -20,8 +20,6 @@ import {
   getHealthErrors,
   getProviderConnections,
   getProviderIncidentsFeed,
-  getTwinAnalyses,
-  getTwinSummary,
   HealthIssue,
   HealthRuntimeList,
   listAllAlerts,
@@ -29,8 +27,6 @@ import {
   ProviderConnection,
   ProviderIncident,
   Repo,
-  TwinAnalysis,
-  TwinSummary,
 } from "@/lib/api";
 import {
   Badge,
@@ -76,7 +72,6 @@ export default function DashboardClient() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [repos, setRepos] = useState<Repo[] | null>(null);
   const [incidents, setIncidents] = useState<ProviderIncident[] | null>(null);
-  const [twin, setTwin] = useState<{ summary: TwinSummary; analyses: TwinAnalysis[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -89,14 +84,13 @@ export default function DashboardClient() {
       setErrors(null);
       setStats(null);
       setIncidents([]);
-      setTwin(null);
       setLoading(false);
       return;
     }
     setLoading(true);
     setLoadError(null);
     try {
-      const [conns, al, er, st, rp, inc, twinData] = await Promise.all([
+      const [conns, al, er, st, rp, inc] = await Promise.all([
         getProviderConnections().catch(() => ({ connections: [] as ProviderConnection[] })),
         listAllAlerts(repositoryId).catch(() => [] as AlertWithRepo[]),
         getHealthErrors(200, repositoryId).catch(() => null),
@@ -105,11 +99,6 @@ export default function DashboardClient() {
         getProviderIncidentsFeed(repositoryId)
           .then((r) => r.incidents || [])
           .catch(() => [] as ProviderIncident[]),
-        // Flagship Digital Twin card: repo-scoped summary + latest analyses.
-        Promise.all([
-          getTwinSummary(repositoryId).catch(() => null),
-          getTwinAnalyses(repositoryId, 5).catch(() => [] as TwinAnalysis[]),
-        ]).then(([summary, analyses]) => (summary ? { summary, analyses } : null)),
       ]);
       setConnections(conns.connections);
       setAlerts(al);
@@ -117,7 +106,6 @@ export default function DashboardClient() {
       setStats(st);
       setRepos(rp);
       setIncidents(inc);
-      setTwin(twinData);
     } catch (e) {
       setLoadError(String(e));
     } finally {
@@ -324,54 +312,6 @@ export default function DashboardClient() {
           tone={(stats?.scans_completed ?? 0) > 0 ? "green" : "gray"}
           delta={stats && stats.last_scan_at ? `last ${timeAgo(stats.last_scan_at)}` : "no scans yet"}
         />
-      </div>
-
-      {/* ── ⚡ API Digital Twin (flagship) ───────────────────────── */}
-      <div className="mc-panel" style={{ borderColor: "var(--accent)", borderWidth: 1, borderStyle: "solid" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "baseline", justifyContent: "space-between" }}>
-          <h3 style={{ margin: 0 }}>⚡ API Digital Twin</h3>
-          <span className="mc-sub">Simulate real provider changes against this repo — before they reach production.</span>
-        </div>
-        {!repositoryId ? (
-          <p className="mc-empty">
-            Select a repository above to simulate real provider changes against its scanned API usage.
-          </p>
-        ) : !twin ? (
-          <p className="mc-empty">
-            Digital Twin data unavailable for this repository (backend endpoint unreachable or migration not applied).
-          </p>
-        ) : (
-          <>
-            <div className="mc-grid mc-cards" style={{ margin: "12px 0" }}>
-              <StatCard label="Provider Changes Simulated" value={twin.summary.provider_changes} tone={twin.summary.provider_changes > 0 ? "accent" : "gray"} delta="real changelog events" />
-              <StatCard label="Affected Usages" value={twin.summary.affected_usages} tone={twin.summary.affected_usages > 0 ? "amber" : "gray"} delta="detected code usages" />
-              <StatCard label="Potential Breaks" value={twin.summary.potential_breaks} tone={twin.summary.potential_breaks > 0 ? "red" : "gray"} delta={twin.summary.breaking_risk > 0 ? `${twin.summary.breaking_risk} breaking risk` : `${twin.summary.safe} safe`} />
-            </div>
-            {twin.analyses.length > 0 && (
-              <div style={{ marginBottom: 10 }}>
-                {twin.analyses.slice(0, 5).map((a) => (
-                  <div key={a.id} className="mc-row">
-                    <span className={`mc-dot ${a.impact_status === "BREAKING RISK" || a.impact_status === "HIGH RISK" ? "red" : a.impact_status === "POTENTIAL IMPACT" ? "amber" : "green"}`} />
-                    <span style={{ minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      <span style={{ fontWeight: 600 }}>{a.impact_status}</span>
-                      <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 6 }}>
-                        {a.affected_file || "Evidence not available"}
-                        {a.affected_symbol ? ` · ${a.affected_symbol}` : ""}
-                      </span>
-                    </span>
-                    <span className="mc-sub" style={{ whiteSpace: "nowrap" }}>{a.provider_id}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="mc-actions">
-              <Link href={`/dashboard/digital-twin${repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : ""}`} className="btn btn-primary">
-                Run Future Simulation
-              </Link>
-              <span className="mc-sub">Static analysis — never claims production is failing.</span>
-            </div>
-          </>
-        )}
       </div>
 
       {/* ── API Performance ────────────────────────────────────── */}

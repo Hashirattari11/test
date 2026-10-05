@@ -10,13 +10,57 @@ common patterns (single-row fetch).
 from __future__ import annotations
 
 import re
+import time
 from functools import lru_cache
 from typing import Any
 
+import httpx
 import supabase._sync.client as supabase_sync_client
 from supabase import Client, create_client
 
 from .config import settings
+
+
+def _add_transient_retry(client: Client, attempts: int = 3) -> None:
+    """Retry idempotent PostgREST calls on transient transport failures.
+
+    A dashboard page load fires a burst of Supabase calls from cold serverless
+    instances, and Supabase occasionally drops mid-flight connections
+    (httpx.RemoteProtocolError "Server disconnected" / ConnectError /
+    ReadTimeout). Unhandled, those surfaced as random 500s on exactly the
+    pages users hit first (/repos, /admin/users, health routes).
+
+    Retry idempotent methods (GET/PATCH/DELETE) with a short backoff; POST is
+    never retried — a disconnected POST may already have been applied and a
+    retry could duplicate rows.
+    """
+    session = client.postgrest.session
+    if getattr(session, "_autofix_retry_patched", False):
+        return
+    real_request = session.request
+
+    def request_with_retry(method: str, url, **kwargs):
+        last_exc: Exception | None = None
+        for attempt in range(attempts):
+            try:
+                return real_request(method, url, **kwargs)
+            except (
+                httpx.RemoteProtocolError,
+                httpx.ConnectError,
+                httpx.ConnectTimeout,
+                httpx.ReadTimeout,
+                httpx.ReadError,
+                httpx.PoolTimeout,
+            ) as exc:
+                last_exc = exc
+                if str(method).upper() in ("GET", "PATCH", "DELETE") and attempt < attempts - 1:
+                    time.sleep(0.15 * (2**attempt))
+                    continue
+                raise
+        raise last_exc  # pragma: no cover — loop always returns or raises
+
+    session.request = request_with_retry  # type: ignore[method-assign]
+    session._autofix_retry_patched = True  # type: ignore[attr-defined]
 
 
 def _patched() -> None:
@@ -64,7 +108,9 @@ def db() -> Client:
             "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set to talk to the database."
         )
     _patched()
-    return create_client(settings.supabase_url, settings.supabase_service_role_key)
+    client = create_client(settings.supabase_url, settings.supabase_service_role_key)
+    _add_transient_retry(client)
+    return client
 
 
 def fetch_one(table: str, match: dict[str, Any]) -> dict[str, Any] | None:

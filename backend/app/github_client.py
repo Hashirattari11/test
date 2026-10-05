@@ -14,12 +14,15 @@ threadpool, so this never blocks the event loop.
 from __future__ import annotations
 
 import base64
+import logging
 from collections.abc import Callable, Iterable
 from typing import TypeVar
 
 import httpx
 
 from .config import settings
+
+logger = logging.getLogger("autofix.github")
 
 GITHUB_API = "https://api.github.com"
 GITHUB_OAUTH_TOKEN_URL = "https://github.com/login/oauth/access_token"
@@ -100,7 +103,11 @@ def exchange_code_for_token(code: str, redirect_uri: str | None = None) -> str:
         raise GitHubError(f"OAuth token exchange failed ({resp.status_code}): {resp.text}")
     data = resp.json()
     if "error" in data:
-        raise GitHubError(f"OAuth error: {data.get('error_description', data['error'])}")
+        # Surface the machine error code so the router can map it to a safe,
+        # actionable message (never includes the code or client secret).
+        code = str(data.get("error") or "unknown_error")
+        logger.warning("GitHub OAuth token exchange rejected: %s", code)
+        raise GitHubError(f"OAuth error: {code}: {data.get('error_description', '')}")
     token = data.get("access_token")
     if not token:
         raise GitHubError("OAuth exchange returned no access_token.")

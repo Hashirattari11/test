@@ -6,6 +6,7 @@ import Link from "next/link";
 import { acceptConsent, getConsentStatus } from "../../lib/api";
 import { clearSession, getUser } from "../../lib/auth";
 import { Spinner } from "../../components/ui";
+import { LogoMark } from "../../components/Logo";
 
 export default function LegalAcceptancePage() {
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function LegalAcceptancePage() {
   return (
     <div className="center-screen">
       <div className="card" style={{ maxWidth: 520 }}>
-        <LogoMark />
+        <LogoMark size={40} />
         <h2 style={{ marginTop: "1rem" }}>Update required</h2>
         <p className="muted">
           Before you continue, please review and accept our updated policies.
@@ -138,28 +139,6 @@ export default function LegalAcceptancePage() {
           </p>
         )}
       </div>
-    </div>
-  );
-}
-
-function LogoMark() {
-  return (
-    <div
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 10,
-        background: "linear-gradient(135deg, #635bff 0%, #8b5cf6 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#fff",
-        fontWeight: 800,
-        fontSize: 18,
-      }}
-      aria-hidden
-    >
-      A
     </div>
   );
 }

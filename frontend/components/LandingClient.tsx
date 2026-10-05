@@ -79,7 +79,10 @@ export default function LandingPage() {
   return (
     <>
       {/* ─── Inline Keyframes ─── */}
-      <style>{`
+      {/* dangerouslySetInnerHTML: SSR would HTML-escape this CSS (`"` → `&quot;`),
+           but the browser does NOT decode entities inside <style> (raw-text
+           element) — the escaped text then fails hydration (React #425). */}
+      <style dangerouslySetInnerHTML={{ __html: `
         .lp-hero-bg {
           position: absolute; inset: 0; z-index: 0; overflow: hidden;
           background: linear-gradient(135deg, #0f0a2e 0%, #1a1145 30%, #0d1b3e 60%, #0a0f2c 100%);
@@ -264,7 +267,7 @@ export default function LandingPage() {
           .lp-cta-section { margin: 0 0; border-radius: 16px; padding: 56px 20px; }
           .lp-code-window { max-width: 100%; }
         }
-      `}</style>
+      `}} />
 
       <header className="landing-nav">
         <div className="landing-nav-inner">

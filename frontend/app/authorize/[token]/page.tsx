@@ -58,7 +58,7 @@ export default function AuthorizePage() {
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .auth-page { min-height: 100vh; background: #f7f7fb; display: flex; align-items: center; justify-content: center; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .auth-card { max-width: 480px; width: 100%; background: white; border-radius: 16px; border: 1px solid #e6e6ef; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
         .auth-header { background: linear-gradient(135deg, #635bff, #8b5cf6); padding: 32px; text-align: center; color: white; }
@@ -88,7 +88,7 @@ export default function AuthorizePage() {
         .auth-footer a:hover { text-decoration: underline; }
         .spinner-sm { display: inline-block; width: 18px; height: 18px; border: 2px solid #e6e6ef; border-top-color: #635bff; border-radius: 50%; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
+      `}} />
 
       <div className="auth-page">
         <div className="auth-card">

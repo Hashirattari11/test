@@ -1,8 +1,10 @@
 // Central site config — single source of truth for SEO metadata.
-export const SITE_URL = "https://frontend-eight-phi-60.vercel.app";
+// Custom domain verified on Vercel (2026-10-01).
+export const SITE_URL = "https://breaklytix.site";
 export const SITE_NAME = "Breaklytix";
+// Keep between 150–160 chars so search engines show the full snippet.
 export const SITE_DESCRIPTION =
-  "Detect the third-party APIs your repos use and get alerted the moment a provider ships a breaking change.";
+  "Breaklytix detects the third-party APIs your repos use, monitors 44+ provider changelogs around the clock, and alerts you the moment a breaking change ships.";
 
 // Support contact. Configure via NEXT_PUBLIC_SUPPORT_EMAIL; falls back to the
 // project's actual support address (also shown on the login page).

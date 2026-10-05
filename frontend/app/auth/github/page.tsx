@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { buildGithubAuthUrl } from "../../../lib/api";
+import { SITE_URL } from "../../../lib/site";
 
 /**
  * /auth/github — Starts the GitHub OAuth dance.
@@ -23,7 +24,13 @@ export default function AuthGithubClient() {
       } catch {
         /* sessionStorage unavailable — OAuth still proceeds (state is advisory) */
       }
-      const redirectUri = window.location.origin + "/auth/callback";
+      // GitHub OAuth Apps allow exactly ONE callback URL, so the redirect_uri
+      // must be the canonical production one regardless of which origin the
+      // user started from (vercel.app previews would otherwise trigger
+      // GitHub's redirect_uri_mismatch). Localhost keeps its own origin so
+      // local dev can use a dedicated localhost OAuth app.
+      const isLocal = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+      const redirectUri = (isLocal ? window.location.origin : SITE_URL) + "/auth/callback";
       window.location.replace(buildGithubAuthUrl(redirectUri, state));
     }
     try {

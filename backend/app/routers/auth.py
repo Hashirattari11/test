@@ -1,6 +1,8 @@
 """Auth routes: GitHub OAuth code exchange -> our session JWT."""
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..crypto import get_cipher
@@ -11,6 +13,46 @@ from ..schemas import AuthOut, GitHubCallbackIn, UserOut
 from .consent import _user_out
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+logger = logging.getLogger("autofix.auth")
+
+# GitHub OAuth error codes -> user-safe, actionable messages. Deliberately
+# curated constants: API responses never echo the caller-supplied redirect
+# URI, the client secret, or raw provider response bodies.
+_OAUTH_SAFE_ERRORS = {
+    "incorrect_client_credentials": (
+        "Sign-in configuration mismatch: the GitHub app used by the site does "
+        "not match the client credentials stored on the backend. Point "
+        "GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET (and the frontend's "
+        "NEXT_PUBLIC_GITHUB_CLIENT_ID) at the same GitHub app."
+    ),
+    "bad_verification_code": (
+        "The GitHub sign-in code was invalid or already used. "
+        "Please go back and sign in again."
+    ),
+    "redirect_uri_mismatch": (
+        "The GitHub app does not have this site's callback URL registered. "
+        "Add '<your-domain>/auth/callback' to the app's callback URLs."
+    ),
+    "application_suspended": (
+        "The GitHub app used for sign-in has been suspended by GitHub. "
+        "Please contact the site administrator."
+    ),
+}
+
+
+def _safe_github_auth_detail(exc: GitHubError) -> str:
+    """Map a GitHub OAuth failure to a user-safe, actionable message."""
+    text = str(exc)
+    if "not configured on the server" in text:
+        return (
+            "GitHub sign-in is not configured on the server. "
+            "Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET."
+        )
+    for code, message in _OAUTH_SAFE_ERRORS.items():
+        if code in text:
+            return message
+    return "GitHub sign-in could not be completed. Please try again."
 
 # Internal-only test identity. The public "demo account" has been removed —
 # real users sign in with GitHub. This endpoint now requires the internal
@@ -46,12 +88,10 @@ def github_callback(body: GitHubCallbackIn) -> AuthOut:
         gh_token = exchange_code_for_token(body.code, body.redirect_uri)
         gh_user = get_authenticated_user(gh_token)
     except GitHubError as exc:
-        # Do not echo the caller-supplied redirect URI or provider internals
-        # in an API response.  Redirect URIs may contain sensitive query data.
-        raise HTTPException(
-            status_code=502,
-            detail="GitHub sign-in could not be completed. Please try again.",
-        )
+        # Full detail goes to server logs (Vercel diagnostics); the API
+        # response stays safe — no redirect URIs, secrets, or raw bodies.
+        logger.warning("GitHub OAuth exchange failed: %s", exc)
+        raise HTTPException(status_code=502, detail=_safe_github_auth_detail(exc))
 
     if not gh_user.get("email"):
         raise HTTPException(

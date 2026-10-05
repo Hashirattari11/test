@@ -173,7 +173,7 @@ function AgencyPageContent() {
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .agency-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
         .agency-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
         .agency-status-authorized { background: var(--green-bg); color: var(--green); }
@@ -191,7 +191,7 @@ function AgencyPageContent() {
         .agency-empty .icon { font-size: 48; margin-bottom: 12px; }
         .agency-tab { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--muted); transition: all 0.15s; }
         .agency-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
-      `}</style>
+      `}} />
 
       <div style={{ padding: "0 24px 64px", maxWidth: 900, margin: "0 auto" }}>
         {/* Header */}

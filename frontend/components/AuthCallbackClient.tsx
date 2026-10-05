@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { githubCallback } from "../lib/api";
 import { storeSession } from "../lib/auth";
+import { SITE_URL } from "../lib/site";
 
 /**
  * /auth/callback — Final leg of GitHub OAuth.
@@ -45,7 +46,11 @@ export default function AuthCallbackClient() {
 
     (async () => {
       try {
-        const redirectUri = window.location.origin + "/auth/callback";
+        // Must match the redirect_uri sent to GitHub's authorize endpoint
+        // exactly (pinned to the production domain there) or the token
+        // exchange fails. Localhost flows keep their own origin.
+        const isLocal = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+        const redirectUri = (isLocal ? window.location.origin : SITE_URL) + "/auth/callback";
         const { token, user } = await githubCallback(code, redirectUri);
         storeSession(token, user);
         if (user.consent_required) {

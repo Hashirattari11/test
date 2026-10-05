@@ -70,7 +70,11 @@ class Settings(BaseSettings):
     # ---- Email (Resend REST API) ------------------------------------------
     resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
     resend_from_email: str = Field(
-        default="Breaklytix <onboarding@resend.dev>", alias="RESEND_FROM_EMAIL"
+        default="Breaklytix <noreply@breaklytix.site>",
+        alias="RESEND_FROM_EMAIL",
+        # Verified in Resend (2026-10-01). Fallback default so emails always
+        # send from the owned domain once DNS is consistent; override via env
+        # only if you must use a different sender.
     )
 
     # ---- Stripe Billing (Phase 3) ------------------------------------------

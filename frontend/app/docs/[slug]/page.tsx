@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDoc, docsBySection, relatedDocs, prevNext, type DocBlock } from "@/lib/docs";
+import { SITE_URL } from "@/lib/site";
 import { LogoMark } from "@/components/Logo";
 
 export function generateStaticParams() {
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title: `${doc.title} | Breaklytix Documentation`,
     description: doc.summary,
     robots: { index: true, follow: true },
-    alternates: { canonical: `https://frontend-eight-phi-60.vercel.app/docs/${doc.slug}` },
+    alternates: { canonical: `${SITE_URL}/docs/${doc.slug}` },
   };
 }
 

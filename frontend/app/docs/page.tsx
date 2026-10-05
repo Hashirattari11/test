@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DOC_SECTIONS, docsBySection, DOCS } from "@/lib/docs";
+import { SITE_URL } from "@/lib/site";
 import { LogoMark } from "@/components/Logo";
 import { DocsSearch } from "@/components/DocsSearch";
 
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
   title: "Documentation | Breaklytix",
   description: "Guides for monitoring provider APIs, detecting code breaks, and using the Impact Engine.",
   robots: { index: true, follow: true },
-  alternates: { canonical: `https://frontend-eight-phi-60.vercel.app/docs` },
+  alternates: { canonical: `${SITE_URL}/docs` },
 };
 
 export default function DocsPage() {

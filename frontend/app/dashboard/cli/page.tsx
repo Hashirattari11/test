@@ -59,7 +59,7 @@ export default function CliPage() {
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .cli-page { max-width: 900px; margin: 0 auto; padding: 32px 24px 64px; }
         .cli-hero { text-align: center; margin-bottom: 48px; }
         .cli-hero h1 { font-size: 32px; font-weight: 800; margin: 0 0 12px; letter-spacing: -0.01em; }
@@ -97,7 +97,7 @@ export default function CliPage() {
           .cli-platform-grid { grid-template-columns: 1fr; }
           .cli-scan-input { flex-direction: column; }
         }
-      `}</style>
+      `}} />
 
       <div className="cli-page">
         {/* Hero */}

@@ -1,5 +1,7 @@
-// Breaklytix brand logo — rounded square with the brand gradient + bolt.
-// Replaces scattered inline "dot + text" logos.
+// Breaklytix brand logo — official logo image with the bolt "B" mark.
+// The mark is cropped from the full logo (square, mark sits in the upper
+// portion) via object-fit/object-position, so every size stays crisp and the
+// API (size / withWordmark / className) used across the app stays unchanged.
 type LogoProps = {
   size?: number;
   withWordmark?: boolean;
@@ -7,6 +9,11 @@ type LogoProps = {
 };
 
 export function LogoMark({ size = 32, withWordmark = false, className }: LogoProps) {
+  // Zoom window: the bolt "B" mark sits around (47%, 30%) of the source image;
+  // we magnify 2.6× and center that point inside the box to show only the mark.
+  const zoom = 2.6;
+  const markX = 0.47;
+  const markY = 0.3;
   return (
     <span className={className} style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
       <span
@@ -15,23 +22,28 @@ export function LogoMark({ size = 32, withWordmark = false, className }: LogoPro
           width: size,
           height: size,
           borderRadius: Math.round(size * 0.28),
-          background: "linear-gradient(135deg, #635bff 0%, #8b5cf6 55%, #06b6d4 130%)",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
+          overflow: "hidden",
           flexShrink: 0,
           boxShadow: "0 2px 8px rgba(99, 91, 255, 0.35)",
+          background: "#0b0b14",
+          display: "inline-block",
+          position: "relative",
         }}
       >
-        <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 24 24" fill="none">
-          <path
-            d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"
-            fill="#fff"
-            stroke="#fff"
-            strokeWidth="1"
-            strokeLinejoin="round"
-          />
-        </svg>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt=""
+          style={{
+            position: "absolute",
+            width: size * zoom,
+            height: size * zoom,
+            maxWidth: "none",
+            left: size * 0.5 - size * zoom * markX,
+            top: size * 0.5 - size * zoom * markY,
+            display: "block",
+          }}
+        />
       </span>
       {withWordmark && (
         <span style={{ fontWeight: 800, fontSize: Math.round(size * 0.55), letterSpacing: "-0.01em", color: "inherit" }}>

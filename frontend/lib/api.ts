@@ -10,10 +10,12 @@ export type { ChangelogEvent, MonitoringProviderRow } from "./providers/types";
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 export const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID || "";
 
-// GitHub OAuth scopes — intentionally read-oriented (no full write `repo`).
-// `public_repo` + `read:user`/`user:email` covers public-repo scanning + identity.
-// Private-repo read-only requires a GitHub App (Contents:read) — see README Phase 2.
-export const GITHUB_SCOPES = "read:user user:email public_repo";
+// GitHub OAuth scopes — `repo` grants read/write access to public AND private
+// repositories the user can access, which is required for scanning private
+// repos (the previous read-only set could not see them at all). Users who
+// connected before this change must re-run GitHub OAuth to grant the new scope.
+// `read:user`/`user:email` cover identity.
+export const GITHUB_SCOPES = "read:user user:email repo";
 
 export type Repo = {
   id: string;

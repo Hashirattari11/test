@@ -48,34 +48,37 @@ def _count(table: str) -> int:
             return 0
 
 
+def _count_where(table: str, **filters: Any) -> int:
+    """Filtered exact count — counts server-side instead of scanning rows."""
+    try:
+        q = db().table(table).select("id", count="exact")
+        for col, val in filters.items():
+            q = q.eq(col, val)
+        res = q.execute()
+        return res.count if res.count is not None else 0
+    except Exception:
+        return 0
+
+
+def _in_chunks(items: list[str], size: int = 100) -> list[list[str]]:
+    """Split an id list so PostgREST `in_(...)` filter URLs stay bounded."""
+    return [items[i : i + size] for i in range(0, len(items), size)]
+
+
 # ---------------------------------------------------------------------------
 # Overview
 # ---------------------------------------------------------------------------
 @router.get("/overview")
 def admin_overview() -> dict:
-    repo_count = _count("repos")
-    alerts_sent = 0
-    alerts_pending = 0
-    alerts_dismissed = 0
-    test_alerts_sent = 0
-    for row in (db().table("alerts").select("status", "is_test").execute().data or []):
-        if row.get("status") == "sent":
-            if row.get("is_test"):
-                test_alerts_sent += 1
-            else:
-                alerts_sent += 1
-        elif row.get("status") == "pending":
-            alerts_pending += 1
-        elif row.get("status") == "dismissed":
-            alerts_dismissed += 1
-
+    # Server-side exact counts (no full-table scans — the alerts table can
+    # grow without bound, so counting rows in Python was O(table)).
     return {
         "total_users": _count("users"),
-        "total_repos": repo_count,
-        "alerts_sent": alerts_sent,
-        "alerts_pending": alerts_pending,
-        "alerts_dismissed": alerts_dismissed,
-        "test_alerts_sent": test_alerts_sent,
+        "total_repos": _count("repos"),
+        "alerts_sent": _count_where("alerts", status="sent", is_test=False),
+        "alerts_pending": _count_where("alerts", status="pending"),
+        "alerts_dismissed": _count_where("alerts", status="dismissed"),
+        "test_alerts_sent": _count_where("alerts", status="sent", is_test=True),
         "providers_monitored": len(MONITORED_APIS),
         "providers_planned": len(PLANNED_APIS),
     }
@@ -97,16 +100,26 @@ def pending_alerts(limit: int = 100) -> dict:
         .execute()
     )
     alerts = []
-    for a in rows.data or []:
+    rows_data = rows.data or []
+    # Resolve owner emails in ONE batched query instead of one query per alert.
+    owner_ids = sorted({
+        (a.get("repos") or {}).get("user_id")
+        for a in rows_data
+        if (a.get("repos") or {}).get("user_id")
+    })
+    emails_by_user: dict[str, str] = {}
+    for chunk in _in_chunks(owner_ids):
+        for u in (
+            db().table("users").select("id,email").in_("id", chunk).execute().data or []
+        ):
+            if u.get("id"):
+                emails_by_user[u["id"]] = u.get("email")
+    for a in rows_data:
         event = a.get("changelog_events") or {}
         detections = a.get("api_detections") or {}
         repo = a.get("repos") or {}
         # Resolve the owning user email (repo.user_id -> users.email)
-        customer_email = None
-        owner_id = repo.get("user_id")
-        if owner_id:
-            u = fetch_one("users", {"id": owner_id})
-            customer_email = (u or {}).get("email")
+        customer_email = emails_by_user.get(repo.get("user_id"))
 
         alert_id = a.get("id")
         subject = None
@@ -258,11 +271,23 @@ def admin_users(
     user_ids = [u.get("id") for u in users if u.get("id")]
     repos_by_user: dict[str, list[dict]] = {uid: [] for uid in user_ids}
     if user_ids:
-        repos = db().table("repos").select("id,user_id,full_name,default_branch,connected_at,last_scanned_at").execute().data or []
-        for repo in repos:
-            owner = repo.get("user_id")
-            if owner in repos_by_user:
-                repos_by_user[owner].append(repo)
+        # Fetch ONLY repos belonging to the returned users, in bounded chunks.
+        # (The previous unbounded full-table scan of `repos` made this endpoint
+        # slower and heavier as the platform grows.)
+        for chunk in _in_chunks(user_ids):
+            repos = (
+                db()
+                .table("repos")
+                .select("id,user_id,full_name,default_branch,connected_at,last_scanned_at")
+                .in_("user_id", chunk)
+                .execute()
+                .data
+                or []
+            )
+            for repo in repos:
+                owner = repo.get("user_id")
+                if owner in repos_by_user:
+                    repos_by_user[owner].append(repo)
     for user in users:
         user["repositories"] = repos_by_user.get(user.get("id"), [])
         user["repository_count"] = len(user["repositories"])

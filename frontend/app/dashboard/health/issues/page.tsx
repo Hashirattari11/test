@@ -52,21 +52,27 @@ const CATEGORY_LABELS: Record<string, string> = {
 function IssuesPage() {
   const searchParams = useSearchParams();
   const repositoryId = searchParams.get("repository_id") ?? "";
-  const [issues, setIssues] = useState<Issue[]>([]);
+  const [issues, setIssues] = useState<Issue[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [severity, setSeverity] = useState("");
   const [category, setCategory] = useState("");
 
   const load = useCallback(() => {
     setLoading(true);
-    setIssues([]); // clear previous view's results while loading
+    setError(null);
+    setIssues(null); // clear previous view's results while loading
     const params = new URLSearchParams({ status: "open" });
     if (severity) params.set("severity", severity);
     if (category) params.set("category", category);
     if (repositoryId) params.set("repository_id", repositoryId);
     apiFetch(`/health/issues?${params}`)
       .then((res: any) => setIssues(Array.isArray(res) ? res : res.issues || []))
-      .catch(() => setIssues([]))
+      .catch((e: any) => {
+        // Error must stay visibly distinct from "no issues" (never fake-empty).
+        setError(e?.message || "Unable to load issues. Try again.");
+        setIssues([]);
+      })
       .finally(() => setLoading(false));
   }, [severity, category, repositoryId]);
 
@@ -75,12 +81,23 @@ function IssuesPage() {
   // Aggregate "All Repositories" view: group by repository identity so results
   // are never flattened into one anonymous mixed list.
   const grouped: Record<string, Issue[]> = {};
-  for (const issue of issues) {
+  for (const issue of issues ?? []) {
     const key = issue.repo_full_name || issue.repo_id || "Unknown repository";
     (grouped[key] ??= []).push(issue);
   }
 
   if (loading) return <div className="loading">Loading issues...</div>;
+  if (error || issues === null) {
+    return (
+      <div className="issues-page">
+        <h1>Reliability Issues</h1>
+        <div className="empty-state" role="alert" style={{ borderColor: "rgba(239,68,68,0.4)" }}>
+          <p>⚠️ {error}</p>
+          <button className="btn btn-primary" onClick={load}>Try again</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="issues-page">
@@ -113,7 +130,7 @@ function IssuesPage() {
         </select>
       </div>
 
-      {issues.length === 0 ? (
+      {issues !== null && issues.length === 0 ? (
         <div className="empty-state">
           <p>{repositoryId ? "No open issues for this repository." : "No open issues found."}</p>
           <Link href="/dashboard/health" className="btn btn-primary">
@@ -168,9 +185,14 @@ function IssueCard({ issue }: { issue: Issue }) {
       </div>
       <h3 className="issue-title">{issue.title}</h3>
       <p className="issue-description">{issue.description}</p>
+      {issue.evidence && (
+        <pre className="issue-evidence" aria-label="Finding evidence">{issue.evidence}</pre>
+      )}
       {issue.file && (
         <p className="issue-location">
-          File: {issue.file}{issue.line ? `:${issue.line}` : ""}
+          <code className="issue-loc-pill">
+            {issue.file}{issue.line ? `:${issue.line}` : ""}
+          </code>
         </p>
       )}
       <div className="issue-footer">

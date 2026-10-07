@@ -125,6 +125,7 @@ class AlertOut(BaseModel):
     provider: str | None = None
     status: str | None = None
     is_test: bool = False
+    read_at: datetime | None = None  # NULL => unread, set => read (alert lifecycle)
 
 
 class AlertWithRepoOut(AlertOut):
@@ -136,6 +137,16 @@ class AlertWithRepoOut(AlertOut):
 class AlertStatusUpdateIn(BaseModel):
     """User-level alert triage: 'resolved' or 'ignored' (Alerts dashboard actions)."""
     status: str
+
+
+class MarkAlertsReadIn(BaseModel):
+    """Mark specific alerts as read (alert lifecycle). Empty/missing = all owned."""
+    alert_ids: list[str] | None = Field(default=None, max_length=500)
+
+
+class MarkAlertsReadOut(BaseModel):
+    """How many alerts were newly marked read by the mark-read operation."""
+    updated: int
 
 
 class SimulatedAlertLocation(BaseModel):

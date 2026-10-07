@@ -35,6 +35,8 @@ from ..schemas import (
     AlertOut,
     AlertWithRepoOut,
     AlertStatusUpdateIn,
+    MarkAlertsReadIn,
+    MarkAlertsReadOut,
     SimulateBreakingChangeOut,
     SimulatedAlertLocation,
 )
@@ -188,6 +190,7 @@ def list_all_alerts(
                 id=a["id"],
                 repo_id=a["repo_id"],
                 repo_name=repo_name_by_id.get(a["repo_id"], "Unknown repo"),
+                read_at=a.get("read_at"),
                 change_type=ev.get("change_type") or a.get("change_type") or "other",
                 description=ev.get("description") or a.get("description") or a.get("severity_reason"),
                 old_value=ev.get("old_value"),
@@ -206,6 +209,39 @@ def list_all_alerts(
             )
         )
     return out
+
+
+@router.patch("/alerts/read", response_model=MarkAlertsReadOut)
+def mark_alerts_read(
+    body: MarkAlertsReadIn | None = None,
+    user_id: str = Depends(get_current_user_id),
+) -> MarkAlertsReadOut:
+    """Mark the user's alerts as READ (alert lifecycle: unread badge -> 0).
+
+    - Ownership enforced: only alerts whose repo belongs to `user_id` are
+      touched (IDOR-safe; passing foreign alert ids simply doesn't match).
+    - Passing specific alert_ids marks only those; omitting the body (or an
+      empty list) marks ALL of the user's currently-unread alerts as read.
+    - Idempotent: already-read rows are unaffected (read_at preserved).
+    """
+    repos_res = db().table("repos").select("id").eq("user_id", user_id).execute()
+    repo_ids = [r["id"] for r in (repos_res.data or [])]
+    if not repo_ids:
+        return MarkAlertsReadOut(updated=0)
+
+    q = (
+        db()
+        .table("alerts")
+        .update({"read_at": datetime.now(timezone.utc).isoformat()})
+        .in_("repo_id", repo_ids)
+        .is_("read_at", "null")
+    )
+    ids = (body.alert_ids if body else None) or []
+    if ids:
+        q = q.in_("id", ids[:500])
+    res = q.execute()
+    updated = len(res.data or [])
+    return MarkAlertsReadOut(updated=updated)
 
 
 @router.patch("/alerts/{alert_id}", response_model=AlertWithRepoOut)

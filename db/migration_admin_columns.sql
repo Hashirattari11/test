@@ -90,3 +90,11 @@ BEGIN
     END IF;
   END LOOP;
 END $$;
+
+-- ============================================================================
+-- 8. Alert read-state (alert lifecycle: UNREAD/READ backed by the database)
+-- ============================================================================
+-- `read_at IS NULL` => UNREAD, `read_at NOT NULL` => READ. Idempotent, additive,
+-- keeps the existing status model (sent/pending/dismissed) untouched.
+ALTER TABLE alerts ADD COLUMN IF NOT EXISTS read_at timestamptz;
+CREATE INDEX IF NOT EXISTS idx_alerts_unread ON alerts (repo_id, read_at) WHERE read_at IS NULL;

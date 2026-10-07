@@ -122,13 +122,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, [router]);
 
   // Real alerts for the notification bell (no fake counts).
+  // The badge counts UNREAD open alerts only (server-backed read_at);
+  // opening the Alerts page marks them read and this count refreshes on
+  // every dashboard navigation.
   useEffect(() => {
     if (!getToken()) return;
     listAllAlerts()
       .then((alerts) => {
-        const open = alerts.filter((a) => !a.is_test && a.status !== "resolved" && a.status !== "ignored");
-        setAlertCount(open.length);
-        setRecent(open.slice(0, 5).map((a) => ({
+        const unreadOpen = alerts.filter(
+          (a) => !a.is_test && !a.read_at && a.status !== "resolved" && a.status !== "ignored"
+        );
+        setAlertCount(unreadOpen.length);
+        setRecent(unreadOpen.slice(0, 5).map((a) => ({
           id: a.id,
           change_type: a.change_type,
           repo_name: a.repo_name,
@@ -137,6 +142,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         })));
       })
       .catch(() => {});
+
+    // The Alerts page marks alerts read server-side; it dispatches this
+    // window event so the unread badge recomputes immediately (no fake 0).
+    const onAlertsRead = () => {
+      listAllAlerts()
+        .then((alerts) => {
+          const unreadOpen = alerts.filter(
+            (a) => !a.is_test && !a.read_at && a.status !== "resolved" && a.status !== "ignored"
+          );
+          setAlertCount(unreadOpen.length);
+        })
+        .catch(() => {});
+    };
+    window.addEventListener("breaklytix:alerts-read", onAlertsRead);
+    return () => window.removeEventListener("breaklytix:alerts-read", onAlertsRead);
   }, []);
 
   // Restore the user's expanded/collapsed sidebar state after first paint

@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useCallback, useEffect, useState, Suspense} from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertWithRepo, listAllAlerts, updateAlertStatus } from "@/lib/api";
+import { AlertWithRepo, listAllAlerts, markAlertsRead, updateAlertStatus } from "@/lib/api";
 import RepositorySelector from "@/components/RepositorySelector";
 
 import { formatDate, SeverityBadge, Spinner } from "@/components/ui";
@@ -20,6 +20,9 @@ function AlertsPage() {
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // Alert lifecycle: an alert is READ once the server recorded read_at.
+  const isRead = (a: AlertWithRepo) => !!a.read_at;
 
   const setStatus = async (id: string, status: "resolved" | "ignored") => {
     setBusyId(id);
@@ -47,6 +50,29 @@ function AlertsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Opening the Alerts page marks the visible alerts READ server-side
+  // (persistent; the sidebar/bell unread badge recalculates from the DB).
+  useEffect(() => {
+    if (!alerts || alerts.length === 0) return;
+    const unread = alerts.filter((a) => !isRead(a)).map((a) => a.id);
+    if (unread.length === 0) return;
+    let cancelled = false;
+    markAlertsRead(unread)
+      .then(() => {
+        if (cancelled) return;
+        // Refetch so read_at comes from the database (not optimistic local state).
+        return load();
+      })
+      .then(() => {
+        if (cancelled) return;
+        // Tell the dashboard layout to recompute the unread badge from the DB.
+        window.dispatchEvent(new CustomEvent("breaklytix:alerts-read"));
+      })
+      .catch(() => { /* badge stays accurate on next load; error already surfaced by load */ });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alerts]);
 
   const filtered = (alerts ?? []).filter(
     (a) =>

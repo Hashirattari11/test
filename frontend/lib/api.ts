@@ -78,6 +78,7 @@ export type Alert = {
 export type AlertWithRepo = Alert & {
   repo_id: string;
   repo_name: string;
+  read_at?: string | null;
 };
 
 export type SimulatedAlertLocation = {
@@ -249,6 +250,13 @@ export const getDetections = (id: string) =>
 export const getAlerts = (id: string) => request<Alert[]>(`/repos/${id}/alerts`);
 export const listAllAlerts = (repositoryId?: string) =>
   request<AlertWithRepo[]>(`/repos/alerts${repositoryId ? `?repository_id=${encodeURIComponent(repositoryId)}` : ""}`);
+// Alert lifecycle: mark alerts READ (server-backed, ownership enforced).
+// No ids => ALL of the user's currently-unread alerts become read.
+export const markAlertsRead = (alertIds?: string[]) =>
+  request<{ updated: number }>("/repos/alerts/read", {
+    method: "PATCH",
+    body: JSON.stringify({ alert_ids: alertIds ?? null }),
+  });
 export const updateAlertStatus = (id: string, status: "resolved" | "ignored") =>
   request<AlertWithRepo>(`/repos/alerts/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
 export const scanRepo = (id: string) =>
